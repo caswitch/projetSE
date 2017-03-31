@@ -4,10 +4,15 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+<<<<<<< HEAD
+#include <sys/time.h>
+#include <time.h>
+=======
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <wait.h>
+>>>>>>> 0e1a304acf2c206043a6ed7e878f18b08c6d179a
 
 #include "file.c"
 #define BUFF_SIZE 256
@@ -57,6 +62,26 @@ void usage(char * const command) {
 	printf("  -h    Display this help and exit\n");
 
 	exit(EXIT_FAILURE);
+}
+
+struct timeval printTime () {
+	char buffer[BUFF_SIZE];
+	struct timeval tv;
+	struct timezone tz;
+
+	assert(gettimeofday(tv, &tz), "gettimofday");
+
+	size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
+	time_t time(time_t *tloc);
+	int gettimeofday(struct timeval *restrict tp, void *restrict tzp);q
+
+	strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
+	printf ("%ld %ld\n", tv.tv_sec, tv.tv_usec);
+	printf("%s\n", buffer);
+
+
+
+	return tv;
 }
 
 int callProgram(char const *prog, char *const args[]){
