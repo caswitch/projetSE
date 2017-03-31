@@ -4,15 +4,12 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
-<<<<<<< HEAD
 #include <sys/time.h>
 #include <time.h>
-=======
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <wait.h>
->>>>>>> 0e1a304acf2c206043a6ed7e878f18b08c6d179a
 
 #include "file.c"
 #define BUFF_SIZE 256
@@ -64,24 +61,22 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-struct timeval printTime () {
+void print_time(char *format) {
 	char buffer[BUFF_SIZE];
 	struct timeval tv;
 	struct timezone tz;
+	struct tm *info;
 
-	assert(gettimeofday(tv, &tz), "gettimofday");
+	assert(gettimeofday(&tv, &tz), "gettimofday");
+	info = localtime(&tv.tv_sec);
 
-	size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
-	time_t time(time_t *tloc);
-	int gettimeofday(struct timeval *restrict tp, void *restrict tzp);q
+	if (info == NULL)
+		grumble("localtime");
 
-	strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
-	printf ("%ld %ld\n", tv.tv_sec, tv.tv_usec);
+	strftime(buffer, BUFF_SIZE, format, info);
+
 	printf("%s\n", buffer);
 
-
-
-	return tv;
 }
 
 int callProgram(char const *prog, char *const args[]){
@@ -98,7 +93,8 @@ int callProgram(char const *prog, char *const args[]){
 			assert(close(tube[0]), "callProgram child close tube[0]");
 			assert(tube[1], "callProgram child write tube[1]");
 
-			assert(dup2(tube[1], 1), "callProgram child redirect stdout > tube[1]");
+			assert(dup2(tube[1], 1), 
+					"callProgram child redirect stdout > tube[1]");
 
 			execvp(prog, args);
 			grumble("callProgram execlp");
@@ -128,8 +124,8 @@ int main(int argc, char * const argv[]) {
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
 			case 't':
-				opt_t = safe_atoi(optarg);
 				printf("t=%d\n", opt_t);
+				print_time(optarg);
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
