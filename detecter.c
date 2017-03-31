@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 
 
 // Grumbles and exits
@@ -52,6 +54,27 @@ void usage(char * const command) {
 
 	exit(EXIT_FAILURE);
 }
+
+struct timeval printTime () {
+	char buffer[BUFF_SIZE];
+	struct timeval tv;
+	struct timezone tz;
+
+	assert(gettimeofday(tv, &tz), "gettimofday");
+
+	size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
+	time_t time(time_t *tloc);
+	int gettimeofday(struct timeval *restrict tp, void *restrict tzp);q
+
+	strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
+	printf ("%ld %ld\n", tv.tv_sec, tv.tv_usec);
+	printf("%s\n", buffer);
+
+
+
+	return tv;
+}
+
 
 
 int main(int argc, char * const argv[]) {
@@ -107,14 +130,10 @@ int main(int argc, char * const argv[]) {
 	if (rest < 1)
 		usage(argv[0]);
 
-
 	for (int i = 0; i < rest; i++) {
 		args[i] = (char *) argv[optind + i];
 		printf("%s    ", args[i]); //CHOU
 	}
-
-
-
 
 	return EXIT_SUCCESS;
 }
