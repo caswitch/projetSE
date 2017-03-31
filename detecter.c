@@ -89,17 +89,16 @@ int callProgram(char const *prog, char *const args[]){
 	}
 }
 
-
+int opt_t;
+int opt_i;
+int opt_l;
+bool opt_c;
+bool opt_h;
 
 int main(int argc, char * const argv[]) {
-	int opt_t;
-	int opt_i;
-	int opt_l;
-	bool opt_c;
-	bool opt_h;
 	int option;
 	int rest; // Arguments that are not options
-	char * args[argc];
+	char *args[argc];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
@@ -138,18 +137,18 @@ int main(int argc, char * const argv[]) {
 	}
 	rest = argc - optind;
 
-	printf("\nrest = %d\n", rest); //CHOU
+	printf("rest = %d\n", rest); //CHOU
 
-	if (rest < 1)
+	if (rest == 0)
 		usage(argv[0]);
-
 
 	for (int i = 0; i < rest; i++) {
 		args[i] = (char *) argv[optind + i];
 		printf("%s    ", args[i]); //CHOU
 	}
+	args[rest] = NULL;
 
-	char *const args[] = {"ls", "-l", NULL};
+	//char *const args[] = {"ls", "-l", NULL};
 	char buf[BUFF_SIZE];
 	int bytes_read;
 
