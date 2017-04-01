@@ -12,7 +12,17 @@
 #include <wait.h>
 
 #include "file.c"
+
 #define BUFF_SIZE 256
+#define CONVERT_USEC 1000
+
+
+int opt_t = 0;
+int opt_i = 10000;
+int opt_l = 0;
+bool opt_c = false;
+bool opt_h = true;
+
 
 // Grumbles and exits
 void grumble(char const * msg) {
@@ -61,8 +71,8 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-void print_time(char *format) {
-	char buffer[BUFF_SIZE];
+void print_time(char *format) { //TODO: return char *
+	char buffer[BUFF_SIZE]; //TODO: Allocation dynamique
 	struct timeval tv;
 	struct timezone tz;
 	struct tm *info;
@@ -76,8 +86,8 @@ void print_time(char *format) {
 	strftime(buffer, BUFF_SIZE, format, info);
 
 	printf("%s\n", buffer);
-
 }
+
 
 int callProgram(char const *prog, char *const args[]){
 	//int status;
@@ -109,13 +119,17 @@ int callProgram(char const *prog, char *const args[]){
 			return tube[0];
 	}
 }
+/*
+void interval (char const *prog, char *const args[]) {
+	 int i = 0;
 
-int opt_t;
-int opt_i;
-int opt_l;
-bool opt_c;
-bool opt_h;
-
+	 while (i <= opt_l) {
+		assert (usleep (opt_i * CONVERT_USEC), "usleep");
+		callProgram (prog, args);
+		i++;
+	 }
+}
+*/
 int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
@@ -128,6 +142,7 @@ int main(int argc, char * const argv[]) {
 				print_time(optarg);
 				break;
 			case 'i':
+				opt_i = *optarg;
 				opt_i = safe_atoi(optarg);
 				printf("i=%d\n", opt_i);
 				break;
@@ -156,6 +171,7 @@ int main(int argc, char * const argv[]) {
 				break;
 		}
 	}
+
 	rest = argc - optind;
 
 	printf("rest = %d\n", rest); //CHOU
@@ -167,18 +183,24 @@ int main(int argc, char * const argv[]) {
 		args[i] = (char *) argv[optind + i];
 		printf("%s    ", args[i]); //CHOU
 	}
+
 	args[rest] = NULL;
 
+//	interval (args[0], args);
+	/*
 	//char *const args[] = {"ls", "-l", NULL};
 	char buf[BUFF_SIZE];
 	int bytes_read;
 
-	int fd = callProgram("ls", args);
+	interval (args[0], args);
+
+	int fd = callProgram(args[0], args);
 	
 	while ( (bytes_read = read(fd, &buf, BUFF_SIZE)) > 0)
 		assert(write(1, buf, bytes_read), "callProgram father write");
 
 	assert(close(fd), "callProgram father close tube[0]");
+	*/
 
 	return EXIT_SUCCESS;
 }
