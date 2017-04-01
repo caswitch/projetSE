@@ -4,18 +4,25 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
-<<<<<<< HEAD
 #include <sys/time.h>
 #include <time.h>
-=======
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <wait.h>
->>>>>>> 0e1a304acf2c206043a6ed7e878f18b08c6d179a
 
 #include "file.c"
 #define BUFF_SIZE 256
+
+
+// Globals
+int opt_t;
+int opt_i;
+int opt_l;
+bool opt_c;
+bool opt_h;
+char* prog_name;
+
 
 // Grumbles and exits
 void grumble(char const * msg) {
@@ -45,43 +52,40 @@ int safe_atoi(char const* str) {
 
 // Prints a nice reminder of how to use the program
 void usage(char * const command) {
-	printf("Usage: %s [-t format] [-i intervalle] ", command);
-	printf("[-l limite] [-c] prog arg ... arg\n");
-	printf("Periodically starts a program and detects changes in state.\n\n");
+	printf("Usage: %s [-t format] [-i range] ", command);
+	printf("[-l limit] [-c] prog arg ... arg\n");
+	printf("Periodically executes a program and detects changes in its output.\n\n");
 	printf("Options:\n");
-	printf("  -i    Gives the interval (in milliseconds) between two program ");
-	printf("launches (default value: 10,000 milliseconds)\n");
-	printf("  -l    Gives the limit of the number of launches, or 0 ");
-	printf("for no limit (default value: 0, ie no limit)\n");
-	printf("  -c    Also detects the return code changes, ie the exit ");
-	printf("argument of the called program (default value: no acknowledgment ");
-	printf("of the return code)\n");
+	printf("  -i    Specify time interval (in milliseconds) between each call");
+	printf("(default value: 10,000 ms)\n");
+	printf("  -l    Specify the number of calls");
+	printf("(default value: 0 (no limit))\n");
+	printf("  -c    Detects changes in the return value too");
+	printf("(default value: 0)");
 	printf("  -t    Causes the date and time of each launch to be displayed, ");
 	printf("with the format specified, compatible with the strftime library ");
 	printf("function (default: no display)\n");
+	printf("Example: %s -t '%%H:%%M:%%S'\n", prog_name);
 	printf("  -h    Display this help and exit\n");
 
 	exit(EXIT_FAILURE);
 }
 
-struct timeval printTime () {
-	char buffer[BUFF_SIZE];
-	struct timeval tv;
-	struct timezone tz;
+bool str_delta(char* str, unsigned int size){
+	static char* lastString = NULL;
 
-	assert(gettimeofday(tv, &tz), "gettimofday");
+	if (lastString == NULL){
+		lastString = str;
+		return true;
+	}
 
-	size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
-	time_t time(time_t *tloc);
-	int gettimeofday(struct timeval *restrict tp, void *restrict tzp);q
+	for (unsigned int i = 0; i < size; ++i){
+		if (str[i] != lastString[i]){
+			return true;
+		}
+	}
 
-	strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
-	printf ("%ld %ld\n", tv.tv_sec, tv.tv_usec);
-	printf("%s\n", buffer);
-
-
-
-	return tv;
+	return false;
 }
 
 int callProgram(char const *prog, char *const args[]){
@@ -98,7 +102,8 @@ int callProgram(char const *prog, char *const args[]){
 			assert(close(tube[0]), "callProgram child close tube[0]");
 			assert(tube[1], "callProgram child write tube[1]");
 
-			assert(dup2(tube[1], 1), "callProgram child redirect stdout > tube[1]");
+			assert(dup2(tube[1], 1), 
+				"callProgram child redirect stdout > tube[1]");
 
 			execvp(prog, args);
 			grumble("callProgram execlp");
@@ -114,17 +119,14 @@ int callProgram(char const *prog, char *const args[]){
 	}
 }
 
-int opt_t;
-int opt_i;
-int opt_l;
-bool opt_c;
-bool opt_h;
-
 int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
+	char buf[BUFF_SIZE];
+	int bytes_read;
 
+	prog_name = argv[0];
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
 			case 't':
@@ -174,9 +176,6 @@ int main(int argc, char * const argv[]) {
 	args[rest] = NULL;
 
 	//char *const args[] = {"ls", "-l", NULL};
-	char buf[BUFF_SIZE];
-	int bytes_read;
-
 	int fd = callProgram("ls", args);
 	
 	while ( (bytes_read = read(fd, &buf, BUFF_SIZE)) > 0)
