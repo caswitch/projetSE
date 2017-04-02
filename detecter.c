@@ -119,17 +119,29 @@ int callProgram(char const *prog, char *const args[]){
 			return tube[0];
 	}
 }
-/*
-void interval (char const *prog, char *const args[]) {
-	 int i = 0;
 
-	 while (i <= opt_l) {
+void interval (char const *prog, char *const args[]) {
+	int i = 0;
+	char buf[BUFF_SIZE];
+	int bytes_read;
+	int fd;
+
+	if (opt_l == 0) 
+
+	 while (1) {
 		assert (usleep (opt_i * CONVERT_USEC), "usleep");
-		callProgram (prog, args);
+
+		fd = callProgram (prog, args);
+		
+		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0)
+			assert(write(1, buf, bytes_read), "callProgram father write");
+
+		assert(close(fd), "callProgram father close tube[0]");
+
 		i++;
 	 }
 }
-*/
+
 int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
@@ -179,14 +191,12 @@ int main(int argc, char * const argv[]) {
 	if (rest == 0)
 		usage(argv[0]);
 
-	for (int i = 0; i < rest; i++) {
+	for (int i = 0; i < rest; i++)
 		args[i] = (char *) argv[optind + i];
-		printf("%s    ", args[i]); //CHOU
-	}
 
 	args[rest] = NULL;
 
-//	interval (args[0], args);
+	interval (args[0], args);
 	/*
 	//char *const args[] = {"ls", "-l", NULL};
 	char buf[BUFF_SIZE];
