@@ -15,13 +15,17 @@
 
 #define BUFF_SIZE 256
 #define CONVERT_USEC 1000
+#define READ 0
+#define WRITE 1
 
 
+// Globals
 int opt_t = 0;
 int opt_i = 10000;
 int opt_l = 0;
 bool opt_c = false;
 bool opt_h = true;
+char* prog_name;
 
 
 // Grumbles and exits
@@ -43,6 +47,9 @@ void assert(int return_value, char const * msg) {
 
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str) {
+	// If a user enters "test", 
+	// I don't want atoi to say "test" means 0. I want an error.
+
 	for (unsigned int i = 0; i < strlen(str); ++i)
 		if (str[i] < '0' || str[i] > '9')
 			grumble("String to number conversion fail");
@@ -52,27 +59,101 @@ int safe_atoi(char const* str) {
 
 // Prints a nice reminder of how to use the program
 void usage(char * const command) {
-	printf("Usage: %s [-t format] [-i intervalle] ", command);
-	printf("[-l limite] [-c] prog arg ... arg\n");
-	printf("Periodically starts a program and detects changes in state.\n\n");
+	printf("Usage: %s [-t format] [-i range] ", command);
+	printf("[-l limit] [-c] prog arg ... arg\n");
+	printf("Periodically executes a program and detects changes in its output.\n\n");
 	printf("Options:\n");
-	printf("  -i    Gives the interval (in milliseconds) between two program ");
-	printf("launches (default value: 10,000 milliseconds)\n");
-	printf("  -l    Gives the limit of the number of launches, or 0 ");
-	printf("for no limit (default value: 0, ie no limit)\n");
-	printf("  -c    Also detects the return code changes, ie the exit ");
-	printf("argument of the called program (default value: no acknowledgment ");
-	printf("of the return code)\n");
+	printf("  -i    Specify time interval (in milliseconds) between each call");
+	printf("(default value: 10,000 ms)\n");
+	printf("  -l    Specify the number of calls");
+	printf("(default value: 0 (no limit))\n");
+	printf("  -c    Detects changes in the return value too");
+	printf("(default value: 0)");
 	printf("  -t    Causes the date and time of each launch to be displayed, ");
 	printf("with the format specified, compatible with the strftime library ");
 	printf("function (default: no display)\n");
+	printf("Example: %s -t '%%H:%%M:%%S'\n", prog_name);
 	printf("  -h    Display this help and exit\n");
 
 	exit(EXIT_FAILURE);
 }
 
-void print_time(char *format) { //TODO: return char *
-	char buffer[BUFF_SIZE]; //TODO: Allocation dynamique
+///*
+typedef struct s_buff {
+	unsigned int size;
+	unsigned int readAddr;
+	unsigned int writeAddr;
+	char* mem;
+} *buffer;
+//*/
+
+buffer buff_putc(buffer b, char c){
+	if (b == NULL){
+		b = malloc(sizeof(struct s_buff));
+		b->mem = malloc(BUFF_SIZE);
+		b->size = BUFF_SIZE;
+		b->readAddr = 0;
+		b->writeAddr = 0;
+	}
+
+	if (b->writeAddr >= b->size){
+		b->size += BUFF_SIZE;
+		b->mem = realloc(b->mem, b->size);
+	}
+	b->mem[b->writeAddr] = c;
+	b->writeAddr += 1;
+	return b;
+}
+
+int buff_getc(buffer b){
+	if (b == NULL)
+		return EOF;
+	if (b->readAddr >= b->size)
+		return EOF;
+
+	return b->mem[b->readAddr++];
+}
+
+bool buff_setpos(buffer b, bool mode, unsigned int pos){
+	if (b == NULL)
+		return false;
+	if (mode == WRITE)
+		b->writeAddr = pos;
+	else
+		b->readAddr = pos;
+	return true;
+}
+
+bool buff_reset(buffer b){
+	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
+}
+
+bool output_delta(int fd) {
+	static buffer cache = NULL;
+	char new = '_';
+	char old = '_';
+	//unsigned int i;
+	bool retvalue = false;
+
+	FICHIER f = my_fdtof(fd, 0);
+
+	buff_reset(cache);
+	while (new != EOF || old != EOF) {
+		// Compare last output with what comes out of fd
+		// As we compare, we replace buff[i] with fd[i]
+		new = my_getc(f);
+		old = buff_getc(cache);
+		if (old != new){
+			retvalue = true;
+		}
+		cache = buff_putc(cache, new);
+	}
+
+	return retvalue;
+}
+
+void print_time(char *format) {
+	char buffer[BUFF_SIZE];
 	struct timeval tv;
 	struct timezone tz;
 	struct tm *info;
@@ -89,7 +170,7 @@ void print_time(char *format) { //TODO: return char *
 }
 
 
-int callProgram(char const *prog, char *const args[]){
+int callProgram(char const *prog, char *const args[]) {
 	//int status;
 	//int devNull;
 	int tube[2];
@@ -104,7 +185,7 @@ int callProgram(char const *prog, char *const args[]){
 			assert(tube[1], "callProgram child write tube[1]");
 
 			assert(dup2(tube[1], 1), 
-					"callProgram child redirect stdout > tube[1]");
+				"callProgram child redirect stdout > tube[1]");
 
 			execvp(prog, args);
 			grumble("callProgram execlp");
@@ -125,10 +206,12 @@ void interval (char const *prog, char *const args[]) {
 	char buf[BUFF_SIZE];
 	int bytes_read;
 	int fd;
+	int limite;
 
-	if (opt_l == 0) 
+	if (opt_l == 0)
+		limite = 0;
 
-	 while (1) {
+	 while (!limite || i < opt_l) {
 		assert (usleep (opt_i * CONVERT_USEC), "usleep");
 
 		fd = callProgram (prog, args);
@@ -146,6 +229,8 @@ int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
+
+	prog_name = argv[0];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
@@ -195,22 +280,20 @@ int main(int argc, char * const argv[]) {
 		args[i] = (char *) argv[optind + i];
 
 	args[rest] = NULL;
-
-	interval (args[0], args);
-	/*
-	//char *const args[] = {"ls", "-l", NULL};
-	char buf[BUFF_SIZE];
-	int bytes_read;
+	printf("\n");
 
 	interval (args[0], args);
 
-	int fd = callProgram(args[0], args);
-	
-	while ( (bytes_read = read(fd, &buf, BUFF_SIZE)) > 0)
-		assert(write(1, buf, bytes_read), "callProgram father write");
+	int a = open("toto", O_RDONLY);
+	int b = open("tata", O_RDONLY);
+	int c = open("tata", O_RDONLY);
+	a = output_delta(a);
+	printf("\nDelta: %d\n", a);
+	b = output_delta(b);
+	printf("\nDelta: %d\n", b);
+	c = output_delta(c);
+	printf("\nDelta: %d\n", c);
 
-	assert(close(fd), "callProgram father close tube[0]");
-	*/
 
 	return EXIT_SUCCESS;
 }

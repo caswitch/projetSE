@@ -4,6 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define BUFFER_SIZE 512
+
 typedef struct FICHIER {
 	int fd; //int car vaut parfois -1
 	char* buffer;
@@ -12,40 +14,67 @@ typedef struct FICHIER {
 	unsigned int mode : 1; //un seul bit
 } *FICHIER;
 
-#define BUFFER_SIZE 512
-
-FICHIER my_open(const char* path, const char* mode){
-	if (strlen(mode) == 0)
+FICHIER my_fdtof(int fd, unsigned int mode){	
+	if (mode > 1)
 		return NULL;
+
 	FICHIER f = malloc(sizeof(struct FICHIER));
-	
+
 	if (f == NULL)
 		return NULL;
 
+	f->buffer = malloc(BUFFER_SIZE * sizeof(char));
+	//f->mode = mode[0];
+	f->length = 0;
+	f->index = 0;
+	f->fd = fd;
+	f->mode = mode;
+
+	return f;
+}
+
+/**
+ * @brief Opens a file
+ * @details Opens a file either in read or write mode. 
+ * Returns a FICHIER structure that'll be required for 
+ * all other library functions
+ * 
+ * @param path A path
+ * @param mode "r" or "w"
+ * 
+ * @return A pointer to your corresponding FICHIER structure 
+ * or NULL if there was an error.
+ */
+FICHIER my_open(const char* path, const char* mode){
 	int flag;
+	unsigned char boolean;
 	switch(mode[0]){
 		case 'w':
 			flag = O_WRONLY | O_TRUNC | O_CREAT;
-			f->mode = 1; 
+			boolean = 1;
 			// indique qu'on est en mode écriture
 			break;
 		case 'r':
 			flag = O_RDONLY;
-			f->mode = 0;
+			boolean = 0;
 			break;
 		default:
-			free(f);
 			return NULL;
 	}
-	f->buffer = malloc(BUFFER_SIZE * sizeof(char));
-	f->fd = open(path, flag, 0666);
-	//f->mode = mode[0];
-	f->length = 0;
-	f->index = 0;
+
+	FICHIER f = my_fdtof(open(path, flag, 0666), boolean);
 	return f;
 }
 
-int my_getc(FICHIER f){
+/**
+ * @brief Bufferized getchar
+ * @details To minimize disk access, caches 512 characters from your file at once
+ * in an internal buffer and returns one character from your file at a time.
+ * 
+ * @param f Your file structure
+ * @return The next character, EOF if you reached the end of your file, -1 if something went wrong.
+ */
+char my_getc(FICHIER f){
 	if(f->length == 0 || f->index >= f->length){
 		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
 		f->index = 0;
@@ -57,7 +86,7 @@ int my_getc(FICHIER f){
 	return f->buffer[f->index++];
 }
 
-int my_ungetc(FICHIER f){
+char my_ungetc(FICHIER f){
 	f->index -= 2;
 	if(f->index < 0){
 		f->index = BUFFER_SIZE-1;
@@ -68,7 +97,7 @@ int my_ungetc(FICHIER f){
 	return f->buffer[f->index++];
 }
 
-int my_putc(int c, FICHIER f){
+char my_putc(int c, FICHIER f){
 	//putchar bufferisé
 	if (f->index >= BUFFER_SIZE){
 		int s = write(f->fd, f->buffer, f->index);
