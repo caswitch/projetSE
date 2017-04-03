@@ -150,6 +150,23 @@ bool output_delta(int fd) {
 	return retvalue;
 }
 
+void print_time(char *format) {
+	char buffer[BUFF_SIZE];
+	struct timeval tv;
+	struct timezone tz;
+	struct tm *info;
+
+	assert(gettimeofday(&tv, &tz), "gettimofday");
+	info = localtime(&tv.tv_sec);
+
+	if (info == NULL)
+		grumble("localtime");
+
+	strftime(buffer, BUFF_SIZE, format, info);
+
+	printf("%s\n", buffer);
+}
+
 int callProgram(char const *prog, char *const args[]) {
 	//int status;
 	//int devNull;
@@ -193,8 +210,8 @@ int main(int argc, char * const argv[]) {
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
 			case 't':
-				opt_t = safe_atoi(optarg);
 				printf("t=%d\n", opt_t);
+				print_time(optarg);
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
