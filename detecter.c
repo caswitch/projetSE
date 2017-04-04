@@ -29,7 +29,7 @@ char* prog_name;
 
 
 // Grumbles and exits
-void grumble(char const * msg) {
+void grumble(char * msg) {
 	// Small 'if' to avoid the "Error: Success" problem
 	if (errno)
 		perror(msg);
@@ -40,7 +40,7 @@ void grumble(char const * msg) {
 }
 
 // Checks for error. If there's one, grumble and exit 
-void assert(int return_value, char const * msg) {
+void assert(int return_value, char * msg) {
 	if (return_value == -1)
 		grumble(msg);
 }
@@ -61,7 +61,8 @@ int safe_atoi(char const* str) {
 void usage(char * const command) {
 	printf("Usage: %s [-t format] [-i range] ", command);
 	printf("[-l limit] [-c] prog arg ... arg\n");
-	printf("Periodically executes a program and detects changes in its output.\n\n");
+	printf("Periodically "
+			"executes a program and detects changes in its output.\n\n");
 	printf("Options:\n");
 	printf("  -i    Specify time interval (in milliseconds) between each call");
 	printf("(default value: 10,000 ms)\n");
@@ -84,10 +85,10 @@ typedef struct s_buff {
 	unsigned int readAddr;
 	unsigned int writeAddr;
 	char* mem;
-} *buffer;
+} *Buffer;
 //*/
 
-buffer buff_putc(buffer b, char c){
+Buffer buff_putc(Buffer b, char c){
 	if (b == NULL){
 		b = malloc(sizeof(struct s_buff));
 		b->mem = malloc(BUFF_SIZE);
@@ -100,36 +101,41 @@ buffer buff_putc(buffer b, char c){
 		b->size += BUFF_SIZE;
 		b->mem = realloc(b->mem, b->size);
 	}
+
 	b->mem[b->writeAddr] = c;
 	b->writeAddr += 1;
+
 	return b;
 }
 
-int buff_getc(buffer b){
+int buff_getc(Buffer b){
 	if (b == NULL)
 		return EOF;
+
 	if (b->readAddr >= b->size)
 		return EOF;
 
 	return b->mem[b->readAddr++];
 }
 
-bool buff_setpos(buffer b, bool mode, unsigned int pos){
+bool buff_setpos(Buffer b, bool mode, unsigned int pos){
 	if (b == NULL)
 		return false;
+
 	if (mode == WRITE)
 		b->writeAddr = pos;
 	else
 		b->readAddr = pos;
+
 	return true;
 }
 
-bool buff_reset(buffer b){
+bool buff_reset(Buffer b){
 	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
 }
 
-bool output_delta(int fd) {
-	static buffer cache = NULL;
+Buffer output_delta(int fd) {
+	static Buffer cache = NULL;
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
@@ -138,18 +144,23 @@ bool output_delta(int fd) {
 	FICHIER f = my_fdtof(fd, 0);
 
 	buff_reset(cache);
+
 	while (new != EOF || old != EOF) {
 		// Compare last output with what comes out of fd
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
 		old = buff_getc(cache);
-		if (old != new){
+
+		if (old != new)
 			retvalue = true;
-		}
+
 		cache = buff_putc(cache, new);
 	}
-
-	return retvalue;
+	
+	if (retvalue)
+		return cache;
+	else
+		return NULL;
 }
 
 void print_time(char *format) {
@@ -215,11 +226,13 @@ void interval (char const *prog, char *const args[]) {
 		assert (usleep (opt_i * CONVERT_USEC), "usleep");
 
 		fd = callProgram (prog, args);
-		
-		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0)
+
+		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0) {
+			printf ("hello");
 			assert(write(1, buf, bytes_read), "callProgram father write");
 
-		assert(close(fd), "callProgram father close tube[0]");
+			assert(close(fd), "callProgram father close tube[0]");
+		}
 
 		i++;
 	 }
@@ -283,7 +296,9 @@ int main(int argc, char * const argv[]) {
 	printf("\n");
 
 	interval (args[0], args);
+	printf ("\n");
 
+	/*
 	int a = open("toto", O_RDONLY);
 	int b = open("tata", O_RDONLY);
 	int c = open("tata", O_RDONLY);
@@ -293,7 +308,7 @@ int main(int argc, char * const argv[]) {
 	printf("\nDelta: %d\n", b);
 	c = output_delta(c);
 	printf("\nDelta: %d\n", c);
-
+	*/
 
 	return EXIT_SUCCESS;
 }
