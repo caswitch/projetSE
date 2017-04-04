@@ -11,17 +11,15 @@
 #include <fcntl.h>
 #include <wait.h>
 
-
 #define BUFF_SIZE 256
 #define CONVERT_USEC 1000
 #define READ 0
 #define WRITE 1
 
-
 #include "file.c"
 //#include "detecter.h"
 
-typedef struct s_buff {
+typedef struct s_buff{
 	unsigned int size;
 	unsigned int readAddr;
 	unsigned int writeAddr;
@@ -29,7 +27,7 @@ typedef struct s_buff {
 } *Buffer;
 
 // Grumbles and exits
-void grumble(char * msg) {
+void grumble(char * msg){
 	// Small 'if' to avoid the "Error: Success" problem
 	if (errno)
 		perror(msg);
@@ -40,13 +38,13 @@ void grumble(char * msg) {
 }
 
 // Checks for error. If there's one, grumble and exit 
-void assert(int return_value, char * msg) {
+void assert(int return_value, char * msg){
 	if (return_value == -1)
 		grumble(msg);
 }
 
 // Converts a string to an int and errors out if not possible
-int safe_atoi(char const* str) {
+int safe_atoi(char const* str){
 	// If a user enters "test", 
 	// I don't want atoi to say "test" means 0. I want an error.
 
@@ -58,25 +56,33 @@ int safe_atoi(char const* str) {
 }
 
 // Prints a nice reminder of how to use the program
-void usage(char * const command) {
+void usage(char * const command){
 	printf("Usage: %s [-t format] [-i range] ", command);
 	printf("[-l limit] [-c] prog arg ... arg\n");
 	printf("Periodically "
 			"executes a program and detects changes in its output.\n\n");
 	printf("Options:\n");
-	printf("  -i    Specify time interval (in milliseconds) between each call");
+	printf("  -i    Specify time interval(in milliseconds) between each call");
 	printf("(default value: 10,000 ms)\n");
 	printf("  -l    Specify the number of calls");
-	printf("(default value: 0 (no limit))\n");
+	printf("(default value: 0(no limit))\n");
 	printf("  -c    Detects changes in the return value too");
 	printf("(default value: 0)");
 	printf("  -t    Causes the date and time of each launch to be displayed, ");
 	printf("with the format specified, compatible with the strftime library ");
-	printf("function (default: no display)\n");
+	printf("function(default: no display)\n");
 	printf("Example: %s -t '%%H:%%M:%%S'\n", command);
 	printf("  -h    Display this help and exit\n");
 
 	exit(EXIT_FAILURE);
+}
+
+void buff_free(Buffer b){
+	if (b == NULL)
+		return;
+	free(b->mem);
+	free(b);
+	return;
 }
 
 Buffer buff_putc(Buffer b, char c){
@@ -137,7 +143,7 @@ bool buff_reset(Buffer b){
 	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
 }
 
-Buffer output_delta(int fd) {
+Buffer output_delta(int fd){
 	static Buffer cache = NULL;
 	char new = '_';
 	char old = '_';
@@ -148,7 +154,7 @@ Buffer output_delta(int fd) {
 
 	buff_reset(cache);
 
-	while (new != EOF || old != EOF) {
+	while (new != EOF || old != EOF){
 		// Compare last output with what comes out of fd
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
@@ -162,12 +168,12 @@ Buffer output_delta(int fd) {
 	
 	if (retvalue){
 		return cache;
-	} else {
+	} else{
 		return NULL;
 	}
 }
 
-void print_time(char *format) {
+void print_time(char *format){
 	char buffer[BUFF_SIZE];
 	struct timeval tv;
 	struct timezone tz;
@@ -185,7 +191,7 @@ void print_time(char *format) {
 }
 
 
-int callProgram(char const *prog, char *const args[]) {
+int callProgram(char const *prog, char *const args[]){
 	//int status;
 	//int devNull;
 	int tube[2];
@@ -193,7 +199,7 @@ int callProgram(char const *prog, char *const args[]) {
 	assert(pipe(tube), "callProgram pipe");
 	
 	int pid = fork();
-	switch (pid) {
+	switch(pid){
 		case 0:
 			//Case enfant
 			assert(close(tube[0]), "callProgram child close tube[0]");
@@ -217,20 +223,20 @@ int callProgram(char const *prog, char *const args[]) {
 	}
 }
 
-void exit_code (int i) {
+void exit_code(int i){
 	static int wstatus_old;
 	int wstatus;
 
-	if (i == 0) {
-		assert (wait (&wstatus_old), "wait");
-		wstatus_old = WEXITSTATUS (wstatus_old);
-		printf ("exit %d\n", wstatus_old);
+	if (i == 0){
+		assert(wait(&wstatus_old), "wait");
+		wstatus_old = WEXITSTATUS(wstatus_old);
+		printf("exit %d\n", wstatus_old);
 	}
-	else {
-		assert (wait (&wstatus), "wait");
-		if (WIFEXITED (wstatus) && WEXITSTATUS(wstatus) != wstatus_old) {
+	else{
+		assert(wait(&wstatus), "wait");
+		if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != wstatus_old){
 			wstatus_old = WEXITSTATUS(wstatus);
-			printf ("exit %d\n", wstatus_old);
+			printf("exit %d\n", wstatus_old);
 		}
 	}
 
@@ -242,7 +248,7 @@ void interval(char const *prog,
 			  int opt_l, 
 			  bool opt_c, 
 			  bool opt_t, 
-			  char * format) {
+			  char * format){
 	int i = 0;
 	Buffer output;
 	int fd;
@@ -251,22 +257,22 @@ void interval(char const *prog,
 	if (opt_l == 0)
 		limite = 0;
 
-	 while (!limite || i < opt_l) {
-		assert (usleep (opt_i * CONVERT_USEC), "usleep");
+	 while (!limite || i < opt_l){
+		assert(usleep(opt_i * CONVERT_USEC), "usleep");
 
 		if (opt_t)
-			print_time (format);
+			print_time(format);
 
-		fd = callProgram (prog, args);
+		fd = callProgram(prog, args);
 		output = output_delta(fd);
 
 		if (output != NULL)
 			assert(
 				write(1, buff_toString(output), buff_getSize(output)-3), 
 			"interval write stdout");
-		
+
 		if (opt_c)
-			exit_code (i);
+			exit_code(i);
 
 		printf("\n");
 		
@@ -276,7 +282,7 @@ void interval(char const *prog,
 	 }
 }
 
-int main(int argc, char * const argv[]) {
+int main(int argc, char * const argv[]){
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
@@ -291,8 +297,8 @@ int main(int argc, char * const argv[]) {
 
 	//	prog_name = argv[0];
 
-	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
-		switch (option) {
+	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
+		switch(option){
 			case 't':
 				opt_t = true;
 				format = optarg;
@@ -339,13 +345,13 @@ int main(int argc, char * const argv[]) {
 		usage(argv[0]);
 
 	for (int i = 0; i < rest; i++)
-		args[i] = (char *) argv[optind + i];
+		args[i] =(char *) argv[optind + i];
 
 	args[rest] = NULL;
 	printf("\n");
 
-	interval (args[0], args, opt_i, opt_l, opt_c, opt_t, format);
-	printf ("\n");
+	interval(args[0], args, opt_i, opt_l, opt_c, opt_t, format);
+	printf("\n");
 
 	return EXIT_SUCCESS;
 }
