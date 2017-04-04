@@ -236,7 +236,13 @@ void exit_code (int i) {
 
 }
 
-void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool opt_c, bool opt_t, char * format) {
+void interval(char const *prog, 
+			  char *const args[], 
+			  int opt_i, 
+			  int opt_l, 
+			  bool opt_c, 
+			  bool opt_t, 
+			  char * format) {
 	int i = 0;
 	Buffer output;
 	int fd;
@@ -255,12 +261,16 @@ void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool 
 		output = output_delta(fd);
 
 		if (output != NULL)
-			assert(write(1, buff_toString(output), buff_getSize(output)-3), "interval write stdout");
-
-		printf("\n");
+			assert(
+				write(1, buff_toString(output), buff_getSize(output)-3), 
+			"interval write stdout");
 		
 		if (opt_c)
 			exit_code (i);
+
+		printf("\n");
+		
+		
 
 		i++;
 	 }
