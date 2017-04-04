@@ -11,9 +11,22 @@
 #include <fcntl.h>
 #include <wait.h>
 
-#include "file.c"
-#include "detecter.h"
 
+#define BUFF_SIZE 256
+#define CONVERT_USEC 1000
+#define READ 0
+#define WRITE 1
+
+
+#include "file.c"
+//#include "detecter.h"
+
+typedef struct s_buff {
+	unsigned int size;
+	unsigned int readAddr;
+	unsigned int writeAddr;
+	char* mem;
+} *Buffer;
 
 // Grumbles and exits
 void grumble(char * msg) {
@@ -86,6 +99,18 @@ Buffer buff_putc(Buffer b, char c){
 	return b;
 }
 
+int buff_getSize(Buffer b){
+	if (b == NULL)
+		return 0;
+	return b->writeAddr;
+}
+
+char* buff_toString(Buffer b){
+	if (b == NULL)
+		return "";
+	return b->mem;
+}
+
 int buff_getc(Buffer b){
 	if (b == NULL)
 		return EOF;
@@ -135,10 +160,11 @@ Buffer output_delta(int fd) {
 		cache = buff_putc(cache, new);
 	}
 	
-	if (retvalue)
+	if (retvalue){
 		return cache;
-	else
+	} else {
 		return NULL;
+	}
 }
 
 void print_time(char *format) {
@@ -212,8 +238,7 @@ void exit_code (int i) {
 
 void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool opt_c, bool opt_t, char * format) {
 	int i = 0;
-	char buf[BUFF_SIZE];
-	int bytes_read;
+	Buffer output;
 	int fd;
 	int limite;
 
@@ -227,13 +252,10 @@ void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool 
 			print_time (format);
 
 		fd = callProgram (prog, args);
+		output = output_delta(fd);
 
-		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0) {
-			printf ("hello");
-			assert(write(1, buf, bytes_read), "callProgram father write");
-
-			assert(close(fd), "callProgram father close tube[0]");
-		}
+		if (output != NULL)
+			assert(write(1, buff_toString(output), buff_getSize(output)-3), "interval write stdout");
 
 		printf("\n");
 		
@@ -248,17 +270,16 @@ int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
-// Globals
-bool opt_t = false; // Time is not printed
-int opt_i = 10000;
-int opt_l = 0;
-bool opt_c = false;
-bool opt_h = true;
-//char* prog_name;
-char * format = false;
+	// Globals
+	bool opt_t = false; // Time is not printed
+	int opt_i = 10000;
+	int opt_l = 0;
+	bool opt_c = false;
+	bool opt_h = true;
+	//char* prog_name;
+	char * format = false;
 
-
-//	prog_name = argv[0];
+	//	prog_name = argv[0];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {

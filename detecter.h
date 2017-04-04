@@ -1,20 +1,6 @@
 #ifndef __DETECTER__H_
 #define __DETECTER__H_
 
-#define BUFF_SIZE 256
-#define CONVERT_USEC 1000
-#define READ 0
-#define WRITE 1
-
-
-typedef struct s_buff {
-	unsigned int size;
-	unsigned int readAddr;
-	unsigned int writeAddr;
-	char* mem;
-} *Buffer;
-
-
 void grumble(char * msg); 
 
 void assert(int return_value, char * msg) ;
