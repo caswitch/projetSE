@@ -12,20 +12,7 @@
 #include <wait.h>
 
 #include "file.c"
-
-#define BUFF_SIZE 256
-#define CONVERT_USEC 1000
-#define READ 0
-#define WRITE 1
-
-
-// Globals
-int opt_t = 0;
-int opt_i = 10000;
-int opt_l = 0;
-bool opt_c = false;
-bool opt_h = true;
-char* prog_name;
+#include "detecter.h"
 
 
 // Grumbles and exits
@@ -73,20 +60,11 @@ void usage(char * const command) {
 	printf("  -t    Causes the date and time of each launch to be displayed, ");
 	printf("with the format specified, compatible with the strftime library ");
 	printf("function (default: no display)\n");
-	printf("Example: %s -t '%%H:%%M:%%S'\n", prog_name);
+	printf("Example: %s -t '%%H:%%M:%%S'\n", command);
 	printf("  -h    Display this help and exit\n");
 
 	exit(EXIT_FAILURE);
 }
-
-///*
-typedef struct s_buff {
-	unsigned int size;
-	unsigned int readAddr;
-	unsigned int writeAddr;
-	char* mem;
-} *Buffer;
-//*/
 
 Buffer buff_putc(Buffer b, char c){
 	if (b == NULL){
@@ -206,13 +184,31 @@ int callProgram(char const *prog, char *const args[]) {
 		default:
 			//Case parent
 			assert(close(tube[1]), "callProgram father close tube[1]");
+			// WHAT ???
 			assert(tube[0], "callProgram father read /tmp/tata");
 
 			return tube[0];
 	}
 }
 
-void interval (char const *prog, char *const args[]) {
+void exit_code (int i) {
+	static int wstatus_old;
+	int wstatus;
+
+	if (i == 0) {
+		assert (wait (&wstatus_old), "wait");
+		wstatus_old = WEXITSTATUS (wstatus_old);
+	}
+	else {
+		assert (wait (&wstatus), "wait");
+		if (WIFEXITED (wstatus) && WEXITSTATUS(wstatus) != wstatus_old)
+			wstatus_old = WEXITSTATUS(wstatus);
+	}
+
+	printf ("exit %d\n", wstatus_old);
+}
+
+void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool opt_c, bool opt_t, char * format) {
 	int i = 0;
 	char buf[BUFF_SIZE];
 	int bytes_read;
@@ -225,6 +221,9 @@ void interval (char const *prog, char *const args[]) {
 	 while (!limite || i < opt_l) {
 		assert (usleep (opt_i * CONVERT_USEC), "usleep");
 
+		if (opt_t)
+			print_time (format);
+
 		fd = callProgram (prog, args);
 
 		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0) {
@@ -234,6 +233,11 @@ void interval (char const *prog, char *const args[]) {
 			assert(close(fd), "callProgram father close tube[0]");
 		}
 
+		printf("\n");
+		
+		if (opt_c)
+			exit_code (i);
+
 		i++;
 	 }
 }
@@ -242,24 +246,36 @@ int main(int argc, char * const argv[]) {
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
+// Globals
+bool opt_t = false; // Time is not printed
+int opt_i = 10000;
+int opt_l = 0;
+bool opt_c = false;
+bool opt_h = true;
+//char* prog_name;
+char * format = false;
 
-	prog_name = argv[0];
+
+//	prog_name = argv[0];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
 		switch (option) {
 			case 't':
+				opt_t = true;
+				format = optarg;
+				/*
 				printf("t=%d\n", opt_t);
 				print_time(optarg);
+				*/
 				break;
 			case 'i':
-				opt_i = *optarg;
+				//opt_i = *optarg;
 				opt_i = safe_atoi(optarg);
-				printf("i=%d\n", opt_i);
+				//printf("i=%d\n", opt_i);
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
 				printf("l=%d\n", opt_l);
-
 				break;
 			case 'c':
 				opt_c = true;
@@ -295,20 +311,8 @@ int main(int argc, char * const argv[]) {
 	args[rest] = NULL;
 	printf("\n");
 
-	interval (args[0], args);
+	interval (args[0], args, opt_i, opt_l, opt_c, opt_t, format);
 	printf ("\n");
-
-	/*
-	int a = open("toto", O_RDONLY);
-	int b = open("tata", O_RDONLY);
-	int c = open("tata", O_RDONLY);
-	a = output_delta(a);
-	printf("\nDelta: %d\n", a);
-	b = output_delta(b);
-	printf("\nDelta: %d\n", b);
-	c = output_delta(c);
-	printf("\nDelta: %d\n", c);
-	*/
 
 	return EXIT_SUCCESS;
 }
