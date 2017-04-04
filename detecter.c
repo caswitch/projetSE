@@ -198,14 +198,16 @@ void exit_code (int i) {
 	if (i == 0) {
 		assert (wait (&wstatus_old), "wait");
 		wstatus_old = WEXITSTATUS (wstatus_old);
+		printf ("exit %d\n", wstatus_old);
 	}
 	else {
 		assert (wait (&wstatus), "wait");
-		if (WIFEXITED (wstatus) && WEXITSTATUS(wstatus) != wstatus_old)
+		if (WIFEXITED (wstatus) && WEXITSTATUS(wstatus) != wstatus_old) {
 			wstatus_old = WEXITSTATUS(wstatus);
+			printf ("exit %d\n", wstatus_old);
+		}
 	}
 
-	printf ("exit %d\n", wstatus_old);
 }
 
 void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool opt_c, bool opt_t, char * format) {
