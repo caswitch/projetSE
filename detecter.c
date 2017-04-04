@@ -17,17 +17,11 @@
 #define WRITE 1
 
 #include "file.c"
+#include "buff.c"
 //#include "detecter.h"
 
-typedef struct s_buff{
-	unsigned int size;
-	unsigned int readAddr;
-	unsigned int writeAddr;
-	char* mem;
-} *Buffer;
-
 // Grumbles and exits
-void grumble(char * msg){
+void grumble(char* msg){
 	// Small 'if' to avoid the "Error: Success" problem
 	if (errno)
 		perror(msg);
@@ -38,7 +32,7 @@ void grumble(char * msg){
 }
 
 // Checks for error. If there's one, grumble and exit 
-void assert(int return_value, char * msg){
+void assert(int return_value, char* msg){
 	if (return_value == -1)
 		grumble(msg);
 }
@@ -56,7 +50,7 @@ int safe_atoi(char const* str){
 }
 
 // Prints a nice reminder of how to use the program
-void usage(char * const command){
+void usage(char* const command){
 	printf("Usage: %s [-t format] [-i range] ", command);
 	printf("[-l limit] [-c] prog arg ... arg\n");
 	printf("Periodically "
@@ -77,74 +71,8 @@ void usage(char * const command){
 	exit(EXIT_FAILURE);
 }
 
-void buff_free(Buffer b){
-	if (b == NULL)
-		return;
-	free(b->mem);
-	free(b);
-	return;
-}
-
-Buffer buff_putc(Buffer b, char c){
-	if (b == NULL){
-		b = malloc(sizeof(struct s_buff));
-		b->mem = malloc(BUFF_SIZE);
-		b->size = BUFF_SIZE;
-		b->readAddr = 0;
-		b->writeAddr = 0;
-	}
-
-	if (b->writeAddr >= b->size){
-		b->size += BUFF_SIZE;
-		b->mem = realloc(b->mem, b->size);
-	}
-
-	b->mem[b->writeAddr] = c;
-	b->writeAddr += 1;
-
-	return b;
-}
-
-int buff_getSize(Buffer b){
-	if (b == NULL)
-		return 0;
-	return b->writeAddr;
-}
-
-char* buff_toString(Buffer b){
-	if (b == NULL)
-		return "";
-	return b->mem;
-}
-
-int buff_getc(Buffer b){
-	if (b == NULL)
-		return EOF;
-
-	if (b->readAddr >= b->size)
-		return EOF;
-
-	return b->mem[b->readAddr++];
-}
-
-bool buff_setpos(Buffer b, bool mode, unsigned int pos){
-	if (b == NULL)
-		return false;
-
-	if (mode == WRITE)
-		b->writeAddr = pos;
-	else
-		b->readAddr = pos;
-
-	return true;
-}
-
-bool buff_reset(Buffer b){
-	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
-}
-
-Buffer output_delta(int fd){
-	static Buffer cache = NULL;
+Buffer* output_delta(int fd){
+	static Buffer* cache = NULL;
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
@@ -248,9 +176,9 @@ void interval(char const *prog,
 			  int opt_l, 
 			  bool opt_c, 
 			  bool opt_t, 
-			  char * format){
+			  char* format){
 	int i = 0;
-	Buffer output;
+	Buffer* output;
 	int fd;
 	int limite;
 
@@ -258,7 +186,7 @@ void interval(char const *prog,
 		limite = 0;
 
 	 while (!limite || i < opt_l){
-		assert(usleep(opt_i * CONVERT_USEC), "usleep");
+		assert(usleep(opt_i* CONVERT_USEC), "usleep");
 
 		if (opt_t)
 			print_time(format);
@@ -282,7 +210,7 @@ void interval(char const *prog,
 	 }
 }
 
-int main(int argc, char * const argv[]){
+int main(int argc, char* const argv[]){
 	int option;
 	int rest; // Arguments that are not options
 	char *args[argc];
@@ -293,7 +221,7 @@ int main(int argc, char * const argv[]){
 	bool opt_c = false;
 	bool opt_h = true;
 	//char* prog_name;
-	char * format = false;
+	char* format = false;
 
 	//	prog_name = argv[0];
 
