@@ -46,22 +46,22 @@ int safe_atoi(char const* str) {
 
 // Prints a nice reminder of how to use the program
 void usage(char * const command) {
-	printf("Usage: %s [-t format] [-i range] ", command);
-	printf("[-l limit] [-c] prog arg ... arg\n");
-	printf("Periodically "
-			"executes a program and detects changes in its output.\n\n");
-	printf("Options:\n");
-	printf("  -i    Specify time interval (in milliseconds) between each call");
-	printf("(default value: 10,000 ms)\n");
-	printf("  -l    Specify the number of calls");
-	printf("(default value: 0 (no limit))\n");
-	printf("  -c    Detects changes in the return value too");
-	printf("(default value: 0)");
-	printf("  -t    Causes the date and time of each launch to be displayed, ");
-	printf("with the format specified, compatible with the strftime library ");
-	printf("function (default: no display)\n");
-	printf("Example: %s -t '%%H:%%M:%%S'\n", command);
-	printf("  -h    Display this help and exit\n");
+	printf( "Usage: %s [-t format] [-i range] "
+			"[-l limit] [-c] prog arg ... arg\n\n", command);
+
+	printf( "Periodically executes a program and detects changes "
+			"in its output.\n\n");
+
+	printf( "Options:\n"
+			"  -i   Specify time interval (in milliseconds) between each call "
+			"(default value: 10,000 ms)\n"
+			"  -l   Specify the number of calls (default value: 0, no limit)\n"
+			"  -c   Detects changes in the return value too (default value: 0)\n"
+			"  -t   Causes the date and time of each launch to be displayed, "
+			"with the format specified, compatible with the strftime library "
+			"function (default: no display)\n"
+			"\tExample: %s -t '%%H:%%M:%%S'\n"
+			"  -h   Display this help and exit\n", command);
 
 	exit(EXIT_FAILURE);
 }
@@ -158,7 +158,7 @@ void print_time(char *format) {
 	printf("%s\n", buffer);
 }
 
-
+//TODO: à changer
 int callProgram(char const *prog, char *const args[]) {
 	//int status;
 	//int devNull;
@@ -184,8 +184,6 @@ int callProgram(char const *prog, char *const args[]) {
 		default:
 			//Case parent
 			assert(close(tube[1]), "callProgram father close tube[1]");
-			// WHAT ???
-			assert(tube[0], "callProgram father read /tmp/tata");
 
 			return tube[0];
 	}
@@ -229,7 +227,6 @@ void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool 
 		fd = callProgram (prog, args);
 
 		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0) {
-			printf ("hello");
 			assert(write(1, buf, bytes_read), "callProgram father write");
 
 			assert(close(fd), "callProgram father close tube[0]");
