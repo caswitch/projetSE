@@ -21,7 +21,7 @@
 
 COV = -coverage
 
-CFLAGS = -Wall -Wextra -Werror -g $(COVERAGE)
+CFLAGS = -Wall -Wextra -Werror -g $(COVERAGE) $(DEBUG)
 
 PROGS	= detecter
 

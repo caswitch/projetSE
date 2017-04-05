@@ -11,12 +11,17 @@
 #include <fcntl.h>
 #include <wait.h>
 
-#include "file.c"
-#include "detecter.h"
+#define BUFF_SIZE 256
+#define CONVERT_USEC 1000
+#define READ 0
+#define WRITE 1
 
+#include "file.c"
+#include "buff.c"
+//#include "detecter.h"
 
 // Grumbles and exits
-void grumble(char * msg) {
+void grumble(char* msg){
 	// Small 'if' to avoid the "Error: Success" problem
 	if (errno)
 		perror(msg);
@@ -27,13 +32,13 @@ void grumble(char * msg) {
 }
 
 // Checks for error. If there's one, grumble and exit 
-void assert(int return_value, char * msg) {
+void assert(int return_value, char* msg){
 	if (return_value == -1)
 		grumble(msg);
 }
 
 // Converts a string to an int and errors out if not possible
-int safe_atoi(char const* str) {
+int safe_atoi(char const* str){
 	// If a user enters "test", 
 	// I don't want atoi to say "test" means 0. I want an error.
 
@@ -66,54 +71,8 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-Buffer buff_putc(Buffer b, char c){
-	if (b == NULL){
-		b = malloc(sizeof(struct s_buff));
-		b->mem = malloc(BUFF_SIZE);
-		b->size = BUFF_SIZE;
-		b->readAddr = 0;
-		b->writeAddr = 0;
-	}
-
-	if (b->writeAddr >= b->size){
-		b->size += BUFF_SIZE;
-		b->mem = realloc(b->mem, b->size);
-	}
-
-	b->mem[b->writeAddr] = c;
-	b->writeAddr += 1;
-
-	return b;
-}
-
-int buff_getc(Buffer b){
-	if (b == NULL)
-		return EOF;
-
-	if (b->readAddr >= b->size)
-		return EOF;
-
-	return b->mem[b->readAddr++];
-}
-
-bool buff_setpos(Buffer b, bool mode, unsigned int pos){
-	if (b == NULL)
-		return false;
-
-	if (mode == WRITE)
-		b->writeAddr = pos;
-	else
-		b->readAddr = pos;
-
-	return true;
-}
-
-bool buff_reset(Buffer b){
-	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
-}
-
-Buffer output_delta(int fd) {
-	static Buffer cache = NULL;
+Buffer* output_delta(int fd){
+	static Buffer* cache = NULL;
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
@@ -123,7 +82,7 @@ Buffer output_delta(int fd) {
 
 	buff_reset(cache);
 
-	while (new != EOF || old != EOF) {
+	while (new != EOF || old != EOF){
 		// Compare last output with what comes out of fd
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
@@ -132,16 +91,19 @@ Buffer output_delta(int fd) {
 		if (old != new)
 			retvalue = true;
 
-		cache = buff_putc(cache, new);
+		if (new != EOF)
+			cache = buff_putc(cache, new);
 	}
 	
-	if (retvalue)
+	if (retvalue){
 		return cache;
-	else
+	}
+	else {
 		return NULL;
+	}
 }
 
-void print_time(char *format) {
+void print_time(char *format){
 	char buffer[BUFF_SIZE];
 	struct timeval tv;
 	struct timezone tz;
@@ -158,8 +120,7 @@ void print_time(char *format) {
 	printf("%s\n", buffer);
 }
 
-//TODO: à changer
-int callProgram(char const *prog, char *const args[]) {
+int callProgram(char const *prog, char *const args[]){
 	//int status;
 	//int devNull;
 	int tube[2];
@@ -167,7 +128,7 @@ int callProgram(char const *prog, char *const args[]) {
 	assert(pipe(tube), "callProgram pipe");
 	
 	int pid = fork();
-	switch (pid) {
+	switch(pid){
 		case 0:
 			//Case enfant
 			assert(close(tube[0]), "callProgram child close tube[0]");
@@ -189,101 +150,98 @@ int callProgram(char const *prog, char *const args[]) {
 	}
 }
 
-void exit_code (int i) {
+void exit_code(int i){
 	static int wstatus_old;
 	int wstatus;
 
-	if (i == 0) {
-		assert (wait (&wstatus_old), "wait");
-		wstatus_old = WEXITSTATUS (wstatus_old);
-		printf ("exit %d\n", wstatus_old);
+	if (i == 0){
+		assert(wait(&wstatus_old), "wait");
+		wstatus_old = WEXITSTATUS(wstatus_old);
+		printf("exit %d\n", wstatus_old);
 	}
-	else {
-		assert (wait (&wstatus), "wait");
-		if (WIFEXITED (wstatus) && WEXITSTATUS(wstatus) != wstatus_old) {
+	else{
+		assert(wait(&wstatus), "wait");
+		if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != wstatus_old){
 			wstatus_old = WEXITSTATUS(wstatus);
-			printf ("exit %d\n", wstatus_old);
+			printf("exit %d\n", wstatus_old);
 		}
 	}
 
 }
 
-void interval (char const *prog, char *const args[], int opt_i, int opt_l, bool opt_c, bool opt_t, char * format) {
+void interval(char const *prog, char *const args[], 
+			  int opt_i, int opt_l, bool opt_c, 
+			  bool opt_t, char* format){
 	int i = 0;
-	char buf[BUFF_SIZE];
-	int bytes_read;
+	Buffer* output;
 	int fd;
-	int limite;
+	int limite = (opt_l != 0);
 
-	if (opt_l == 0)
-		limite = 0;
-
-	 while (!limite || i < opt_l) {
-		assert (usleep (opt_i * CONVERT_USEC), "usleep");
+	 while (!limite || i < opt_l){
+		assert(usleep(opt_i* CONVERT_USEC), "usleep");
 
 		if (opt_t)
-			print_time (format);
+			print_time(format);
 
-		fd = callProgram (prog, args);
+		fd = callProgram(prog, args);
+		output = output_delta(fd);
 
-		while ((bytes_read = read(fd, &buf, BUFF_SIZE)) > 0) {
-			assert(write(1, buf, bytes_read), "callProgram father write");
+		if (output != NULL)
+			assert(
+					write(1, buff_toString(output), buff_getSize(output)), 
+			"interval write stdout");
 
-			assert(close(fd), "callProgram father close tube[0]");
-		}
-
-		printf("\n");
-		
 		if (opt_c)
-			exit_code (i);
+			exit_code(i);
 
+		assert (close (fd), "close fd");
+		
 		i++;
 	 }
 }
 
-int main(int argc, char * const argv[]) {
+int main(int argc, char* const argv[]){
 	int option;
-	int rest; // Arguments that are not options
-	char *args[argc];
-// Globals
-bool opt_t = false; // Time is not printed
-int opt_i = 10000;
-int opt_l = 0;
-bool opt_c = false;
-bool opt_h = true;
-//char* prog_name;
-char * format = false;
+	// Globals
+	bool opt_t = false; // Time is not printed
+	int opt_i = 10000;
+	int opt_l = 0;
+	bool opt_c = false;
+	//char* prog_name;
+	char* format = false;
 
+	//	prog_name = argv[0];
 
-//	prog_name = argv[0];
-
-	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1) {
-		switch (option) {
+	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
+		switch(option){
 			case 't':
 				opt_t = true;
 				format = optarg;
-				/*
+#ifdef DEBUG
 				printf("t=%d\n", opt_t);
+#endif
 				print_time(optarg);
-				*/
 				break;
 			case 'i':
-				//opt_i = *optarg;
 				opt_i = safe_atoi(optarg);
-				//printf("i=%d\n", opt_i);
+#ifdef DEBUG
+				printf("i=%d\n", opt_i);
+#endif
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
+#ifdef DEBUG
 				printf("l=%d\n", opt_l);
+#endif
 				break;
 			case 'c':
 				opt_c = true;
+#ifdef DEBUG
 				printf("c=%d\n", opt_c);
+#endif
 				break;
 			case 'h':
-				opt_h = true;
 				usage(argv[0]);
-				printf("h=%d\n", opt_h);
 				break;
 			case '?':
 				printf("Unknown option: %c\n", optopt);
@@ -297,21 +255,17 @@ char * format = false;
 		}
 	}
 
-	rest = argc - optind;
+	argc -= optind;
+	argv += optind;
 
+#ifdef DEBUG
 	printf("rest = %d\n", rest); //CHOU
+#endif
 
-	if (rest == 0)
+	if (argc == 0)
 		usage(argv[0]);
 
-	for (int i = 0; i < rest; i++)
-		args[i] = (char *) argv[optind + i];
-
-	args[rest] = NULL;
-	printf("\n");
-
-	interval (args[0], args, opt_i, opt_l, opt_c, opt_t, format);
-	printf ("\n");
+	interval(argv[0], argv, opt_i, opt_l, opt_c, opt_t, format);
 
 	return EXIT_SUCCESS;
 }
