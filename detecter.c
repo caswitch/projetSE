@@ -195,7 +195,6 @@ void interval(char const *prog, char *const args[], int opt_i,
 			exit_code(i);
 
 		assert (close (fd), "close fd");
-		printf("\n");
 		
 		i++;
 	 }
