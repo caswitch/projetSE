@@ -51,22 +51,22 @@ int safe_atoi(char const* str){
 
 // Prints a nice reminder of how to use the program
 void usage(char * const command) {
-	printf( "Usage: %s [-t format] [-i range] "
-			"[-l limit] [-c] prog arg ... arg\n\n", command);
+	printf("Usage: %s [-t format] [-i range] "
+		   "[-l limit] [-c] prog arg ... arg\n\n", command);
 
-	printf( "Periodically executes a program and detects changes "
-			"in its output.\n\n");
+	printf("Periodically executes a program and detects changes "
+		   "in its output.\n\n");
 
-	printf( "Options:\n"
-			"  -i   Specify time interval (in milliseconds) between each call "
-			"(default value: 10,000 ms)\n"
-			"  -l   Specify the number of calls (default value: 0, no limit)\n"
-			"  -c   Detects changes in the return value too (default value: 0)\n"
-			"  -t   Causes the date and time of each launch to be displayed, "
-			"with the format specified, compatible with the strftime library "
-			"function (default: no display)\n"
-			"\tExample: %s -t '%%H:%%M:%%S'\n"
-			"  -h   Display this help and exit\n", command);
+	printf("Options:\n"
+		   "  -i   Specify time interval (in milliseconds) between each call "
+		   "(default value: 10,000 ms)\n"
+		   "  -l   Specify the number of calls (default value: 0, no limit)\n"
+		   "  -c   Detects changes in the return value too (default value: 0)\n"
+		   "  -t   Causes the date and time of each launch to be displayed, "
+		   "with the format specified, compatible with the strftime library "
+		   "function (default: no display)\n"
+		   "\tExample: %s -t '%%H:%%M:%%S'\n"
+		   "  -h   Display this help and exit\n", command);
 
 	exit(EXIT_FAILURE);
 }
@@ -160,7 +160,7 @@ void exit_code(int i){
 		wstatus_old = WEXITSTATUS(wstatus_old);
 		printf("exit %d\n", wstatus_old);
 	}
-	else{
+	else {
 		assert(wait(&wstatus), "wait");
 		if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != wstatus_old){
 			wstatus_old = WEXITSTATUS(wstatus);
@@ -177,7 +177,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 	int fd;
 	int limite = (opt_l != 0);
 
-	 while (!limite || i < opt_l){
+	while (!limite || i < opt_l){
 		assert(usleep(opt_i* CONVERT_USEC), "usleep");
 
 		if (opt_t)
@@ -186,15 +186,20 @@ void interval(char const *prog, char *const args[], int opt_i,
 		fd = callProgram(prog, args);
 		output = output_delta(fd);
 
-		if (output != NULL)
-			assert(
-					write(1, buff_toString(output), buff_getSize(output)), 
-			"interval write stdout");
+		if (output != NULL){
+			if (write(1, buff_toString(output), buff_getSize(output)) == -1){
+				buff_free(output);
+				grumble("interval write to stdout fail");
+			}
+			else {
+				buff_free(output);
+			}
+		}
 
 		if (opt_c)
 			exit_code(i);
 
-		assert (close (fd), "close fd");
+		assert(close(fd), "close fd");
 		
 		i++;
 	 }
@@ -215,28 +220,28 @@ int main(int argc, char* const argv[]){
 			case 't':
 				opt_t = true;
 				format = optarg;
-#				ifdef DEBUG
+#ifdef DEBUG
 					printf("t=%d\n", opt_t);
 					print_time(optarg);
-#				endif
+#endif
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
-#				ifdef DEBUG
+#ifdef DEBUG
 					printf("i=%d\n", opt_i);
-#				endif
+#endif
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
-#				ifdef DEBUG
+#ifdef DEBUG
 					printf("l=%d\n", opt_l);
-#				endif
+#endif
 				break;
 			case 'c':
 				opt_c = true;
-#				ifdef DEBUG
+#ifdef DEBUG
 					printf("c=%d\n", opt_c);
-#				endif
+#endif
 				break;
 			case 'h':
 				usage(prog_name);
@@ -257,9 +262,9 @@ int main(int argc, char* const argv[]){
 	argc -= optind;
 	argv += optind;
 
-#	ifdef DEBUG
+#ifdef DEBUG
 		printf("rest = %d\n", rest); //CHOU
-#	endif
+#endif
 
 	if (argc == 0)
 		usage(prog_name);
