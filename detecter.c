@@ -178,7 +178,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 	int limite = (opt_l != 0);
 
 	 while (!limite || i < opt_l){
-		assert(usleep(opt_i* CONVERT_USEC), "usleep");
+		//assert(usleep(opt_i* CONVERT_USEC), "usleep");
 
 		if (opt_t)
 			print_time(format);
@@ -197,6 +197,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 		assert (close (fd), "close fd");
 		
 		i++;
+		assert(usleep(opt_i* CONVERT_USEC), "usleep");
 	 }
 }
 
