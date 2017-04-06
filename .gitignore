@@ -1,2 +1,6 @@
 *.swp
 .~lock*
+*.pdf
+alarme
+clock
+detecter

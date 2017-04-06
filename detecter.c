@@ -82,7 +82,7 @@ Buffer* output_delta(int fd){
 
 	buff_reset(cache);
 
-	while (new != EOF || old != EOF){
+	while (new != EOF){
 		// Compare last output with what comes out of fd
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
@@ -169,9 +169,8 @@ void exit_code(int i){
 
 }
 
-void interval(char const *prog, char *const args[], 
-			  int opt_i, int opt_l, bool opt_c, 
-			  bool opt_t, char* format){
+void interval(char const *prog, char *const args[], int opt_i, 
+			  int opt_l, bool opt_c, bool opt_t, char* format){
 	int i = 0;
 	Buffer* output;
 	int fd;
@@ -195,6 +194,7 @@ void interval(char const *prog, char *const args[],
 			exit_code(i);
 
 		assert (close (fd), "close fd");
+		printf("\n");
 		
 		i++;
 	 }
@@ -217,28 +217,26 @@ int main(int argc, char* const argv[]){
 			case 't':
 				opt_t = true;
 				format = optarg;
-#ifdef DEBUG
-				printf("t=%d\n", opt_t);
-#endif
+				#ifdef DEBUG
+					printf("t=%d\n", opt_t);
+				#endif
 				print_time(optarg);
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
-#ifdef DEBUG
 				printf("i=%d\n", opt_i);
-#endif
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
-#ifdef DEBUG
-				printf("l=%d\n", opt_l);
-#endif
+				#ifdef DEBUG
+					printf("l=%d\n", opt_l);
+				#endif
 				break;
 			case 'c':
 				opt_c = true;
-#ifdef DEBUG
-				printf("c=%d\n", opt_c);
-#endif
+				#ifdef DEBUG
+					printf("c=%d\n", opt_c);
+				#endif
 				break;
 			case 'h':
 				usage(argv[0]);
