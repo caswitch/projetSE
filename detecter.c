@@ -87,13 +87,14 @@ Buffer* output_delta(int fd){
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
 		old = buff_getc(cache);
-
-		if (old != new)
+		if (old != new){
 			retvalue = true;
+		}
 
-		if (new != EOF)
-			cache = buff_putc(cache, new);
+		
+		cache = buff_putc(cache, new);
 	}
+	buff_unputc(cache);
 	
 	if (retvalue){
 		return cache;
@@ -262,6 +263,25 @@ int main(int argc, char* const argv[]){
 
 	if (argc == 0)
 		usage(argv[0]);
+
+	#ifdef DEBUG
+		int fd1 = open("toto", O_RDONLY);
+		Buffer* bite1 = output_delta(fd1);
+		printf("%p\n", bite1?bite1->mem:NULL);
+		//printf("'%s'\n\n\n", bite1->mem);
+
+		int fd2 = fd1;
+		Buffer* bite2 = output_delta(fd2);
+		printf("%p\n", bite2?bite2->mem:NULL);
+		//printf("'%s'\n\n\n", bite2->mem);
+
+		int fd3 = open("tata", O_RDONLY);
+		Buffer* bite3 = output_delta(fd3);
+		printf("%p\n", bite3?bite3->mem:NULL);
+		//printf("'%s'\n\n\n", bite3->mem);
+
+		exit(0);
+	#endif
 
 	interval(argv[0], argv, opt_i, opt_l, opt_c, opt_t, format);
 

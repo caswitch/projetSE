@@ -28,8 +28,7 @@ Buffer* buff_putc(Buffer* b, char c){
 	}
 
 	b->mem[b->writeAddr] = c;
-	b->writeAddr += 1;
-
+	b->writeAddr++;
 	return b;
 }
 
@@ -53,6 +52,10 @@ int buff_getc(Buffer* b){
 		return EOF;
 
 	return b->mem[b->readAddr++];
+}
+
+void buff_unputc(Buffer* b){
+	b->writeAddr--;
 }
 
 bool buff_setpos(Buffer* b, bool mode, unsigned int pos){
