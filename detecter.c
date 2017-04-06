@@ -208,39 +208,39 @@ int main(int argc, char* const argv[]){
 	int opt_i = 10000;
 	int opt_l = 0;
 	bool opt_c = false;
-	//char* prog_name;
 	char* format = false;
-
-	//	prog_name = argv[0];
+	char* prog_name = argv[0];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
 		switch(option){
 			case 't':
 				opt_t = true;
 				format = optarg;
-				#ifdef DEBUG
+#				ifdef DEBUG
 					printf("t=%d\n", opt_t);
 					print_time(optarg);
-				#endif
+#				endif
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
-				printf("i=%d\n", opt_i);
+#				ifdef DEBUG
+					printf("i=%d\n", opt_i);
+#				endif
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
-				#ifdef DEBUG
+#				ifdef DEBUG
 					printf("l=%d\n", opt_l);
-				#endif
+#				endif
 				break;
 			case 'c':
 				opt_c = true;
-				#ifdef DEBUG
+#				ifdef DEBUG
 					printf("c=%d\n", opt_c);
-				#endif
+#				endif
 				break;
 			case 'h':
-				usage(argv[0]);
+				usage(prog_name);
 				break;
 			case '?':
 				printf("Unknown option: %c\n", optopt);
@@ -254,34 +254,16 @@ int main(int argc, char* const argv[]){
 		}
 	}
 
+
 	argc -= optind;
 	argv += optind;
 
-	#ifdef DEBUG
+#	ifdef DEBUG
 		printf("rest = %d\n", rest); //CHOU
-	#endif
+#	endif
 
 	if (argc == 0)
-		usage(argv[0]);
-
-	#ifdef DEBUG
-		int fd1 = open("toto", O_RDONLY);
-		Buffer* bite1 = output_delta(fd1);
-		printf("%p\n", bite1?bite1->mem:NULL);
-		//printf("'%s'\n\n\n", bite1->mem);
-
-		int fd2 = fd1;
-		Buffer* bite2 = output_delta(fd2);
-		printf("%p\n", bite2?bite2->mem:NULL);
-		//printf("'%s'\n\n\n", bite2->mem);
-
-		int fd3 = open("tata", O_RDONLY);
-		Buffer* bite3 = output_delta(fd3);
-		printf("%p\n", bite3?bite3->mem:NULL);
-		//printf("'%s'\n\n\n", bite3->mem);
-
-		exit(0);
-	#endif
+		usage(prog_name);
 
 	interval(argv[0], argv, opt_i, opt_l, opt_c, opt_t, format);
 
