@@ -13,14 +13,20 @@ void buff_free(Buffer* b){
 	return;
 }
 
+Buffer* buff_new(){
+	Buffer* b = malloc(sizeof(struct s_buff));
+
+	b->mem = malloc(BUFF_SIZE);
+	b->size = BUFF_SIZE;
+	b->readAddr = 0;
+	b->writeAddr = 0;
+
+	return b;
+}
+
 Buffer* buff_putc(Buffer* b, char c){
-	if (b == NULL){
-		b = malloc(sizeof(struct s_buff));
-		b->mem = malloc(BUFF_SIZE);
-		b->size = BUFF_SIZE;
-		b->readAddr = 0;
-		b->writeAddr = 0;
-	}
+	if (b == NULL)
+		return NULL;
 
 	if (b->writeAddr >= b->size){
 		b->size += BUFF_SIZE;
@@ -55,6 +61,8 @@ int buff_getc(Buffer* b){
 }
 
 void buff_unputc(Buffer* b){
+	if (b == NULL)
+		return;
 	b->writeAddr--;
 }
 
