@@ -166,7 +166,7 @@ void exit_code(int i){
 			printf("exit %d\n", wstatus_old);
 		}
 	}
-
+	fflush (stdout);
 }
 
 void interval(char const *prog, char *const args[], 
@@ -219,8 +219,8 @@ int main(int argc, char* const argv[]){
 				format = optarg;
 #ifdef DEBUG
 				printf("t=%d\n", opt_t);
-#endif
 				print_time(optarg);
+#endif
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
