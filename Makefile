@@ -67,13 +67,13 @@ test: test-sans-valgrind
 
 .PHONY: test_sans-valgrind
 test-sans-valgrind: all
-	@for i in test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
+	@for i in test/test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
 
 .PHONY: test_avec-valgrind
 test-avec-valgrind: all
 	VALGRIND="valgrind -q"
 	export VALGRIND
-	for i in test-*.sh
+	for i in test/test-*.sh
 	do echo $$i ; sh $$i || exit 1 ; done
 
 .PHONY: couverture-et-tests
@@ -81,7 +81,6 @@ couverture-et-tests: clean coverage test gcov
 
 .PHONY: ctags
 ctags:
-	#ctags src/*.c include/*.h
 	ctags $(SOURCES) $(DEPS)
 
 .PHONY: clean
