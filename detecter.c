@@ -71,8 +71,7 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-Buffer* output_delta(int fd){
-	static Buffer* cache = NULL;
+Buffer* output_delta(int fd, Buffer* cache){
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
@@ -90,7 +89,6 @@ Buffer* output_delta(int fd){
 		if (old != new){
 			retvalue = true;
 		}
-
 		
 		cache = buff_putc(cache, new);
 	}
@@ -155,7 +153,7 @@ void exit_code(int i){
 	static int wstatus_old;
 	int wstatus;
 
-	if (i == 0){
+	if (i == 0) {
 		assert(wait(&wstatus_old), "wait");
 		wstatus_old = WEXITSTATUS(wstatus_old);
 		printf("exit %d\n", wstatus_old);
@@ -173,26 +171,24 @@ void exit_code(int i){
 void interval(char const *prog, char *const args[], int opt_i, 
 			  int opt_l, bool opt_c, bool opt_t, char* format){
 	int i = 0;
-	Buffer* output;
+	Buffer* output = NULL;
 	int fd;
 	int limite = (opt_l != 0);
+
+	output = buff_new(output);
 
 	while (!limite || i < opt_l){
 		if (opt_t)
 			print_time(format);
 
 		fd = callProgram(prog, args);
-		output = output_delta(fd);
+		output = output_delta(fd, output);
 
-		if (output != NULL){
+		if (output != NULL)
 			if (write(1, buff_toString(output), buff_getSize(output)) == -1){
 				buff_free(output);
 				grumble("interval write to stdout fail");
 			}
-			else {
-				buff_free(output);
-			}
-		}
 
 		if (opt_c)
 			exit_code(i);
@@ -201,7 +197,8 @@ void interval(char const *prog, char *const args[], int opt_i,
 		
 		i++;
 		assert(usleep(opt_i* CONVERT_USEC), "usleep");
-	 }
+	}
+	buff_free(output);
 }
 
 int main(int argc, char* const argv[]){
