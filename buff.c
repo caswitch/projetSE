@@ -1,9 +1,4 @@
-typedef struct s_buff{
-	unsigned int size;
-	unsigned int readAddr;
-	unsigned int writeAddr;
-	char* mem;
-} Buffer;
+#include "assert.h"
 
 void buff_free(Buffer* b){
 	if (b == NULL)
@@ -50,7 +45,7 @@ char* buff_toString(Buffer* b){
 	return b->mem;
 }
 
-int buff_getc(Buffer* b){
+char buff_getc(Buffer* b){
 	if (b == NULL)
 		return EOF;
 
@@ -60,10 +55,10 @@ int buff_getc(Buffer* b){
 	return b->mem[b->readAddr++];
 }
 
-void buff_unputc(Buffer* b){
+char buff_unputc(Buffer* b){
 	if (b == NULL)
-		return;
-	b->writeAddr--;
+		return false;
+	return b->mem[b->writeAddr--];
 }
 
 bool buff_setpos(Buffer* b, bool mode, unsigned int pos){
@@ -79,5 +74,7 @@ bool buff_setpos(Buffer* b, bool mode, unsigned int pos){
 }
 
 bool buff_reset(Buffer* b){
+	if (b == NULL)
+		return false;
 	return buff_setpos(b, 0, 0) && buff_setpos(b, 1, 0);
 }
