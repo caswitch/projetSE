@@ -4,8 +4,6 @@
 
 #include "file.h"
 
-#define BUFFER_SIZE 512
-
 FICHIER my_open(int fd){	
 	FICHIER f = malloc(sizeof(struct FICHIER));
 
