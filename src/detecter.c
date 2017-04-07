@@ -71,6 +71,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 		cache = buff_putc(cache, new);
 	}
 	buff_unputc(cache);
+	my_close(f);
 	
 	if (retvalue){
 		return cache;
