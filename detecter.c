@@ -16,26 +16,10 @@
 #define READ 0
 #define WRITE 1
 
-#include "file.c"
-#include "buff.c"
+#include "file.h"
+#include "buff.h"
+#include "assert.h"
 //#include "detecter.h"
-
-// Grumbles and exits
-void grumble(char* msg){
-	// Small 'if' to avoid the "Error: Success" problem
-	if (errno)
-		perror(msg);
-	else
-		fprintf(stderr, "%s\n", msg);
-
-	exit(EXIT_FAILURE);
-}
-
-// Checks for error. If there's one, grumble and exit 
-void assert(int return_value, char* msg){
-	if (return_value == -1)
-		grumble(msg);
-}
 
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str){
@@ -77,7 +61,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 	//unsigned int i;
 	bool retvalue = false;
 
-	FICHIER f = my_fdtof(fd, 0);
+	FICHIER f = my_open(fd);
 
 	buff_reset(cache);
 
@@ -208,7 +192,7 @@ int main(int argc, char* const argv[]){
 	int opt_i = 10000;
 	int opt_l = 0;
 	bool opt_c = false;
-	char* format = false;
+	char* format = NULL;
 	char* prog_name = argv[0];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){

@@ -1,3 +1,4 @@
+
 // Grumbles and exits
 void grumble(char* msg){
 	// Small 'if' to avoid the "Error: Success" problem
