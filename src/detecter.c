@@ -7,9 +7,6 @@
 #include <time.h>
 #include <wait.h>
 
-#define BUFFT_SIZE 256
-#define CONVERT_USEC 1000
-
 #include "file.h"
 #include "buff.h"
 #include "assert.h"

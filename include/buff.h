@@ -1,6 +1,9 @@
 #ifndef __BUFF__H_
 #define __BUFF__H_
 
+#define BUFF_SIZE 256
+#define WRITE 1
+
 /**
  * @brief Infinite text buffer
  * @details Buffer scales up as it fills. Scales by 256 bytes every time the
