@@ -1,25 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <wait.h>
 
-#define BUFF_SIZE 256
+#define BUFFT_SIZE 256
 #define CONVERT_USEC 1000
-#define READ 0
-#define WRITE 1
 
 #include "file.h"
 #include "buff.h"
 #include "assert.h"
-//#include "detecter.h"
+#include "detecter.h"
 
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str){
@@ -87,7 +81,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 }
 
 void print_time(char *format){
-	char buffer[BUFF_SIZE];
+	char buffer[BUFFT_SIZE];
 	struct timeval tv;
 	struct timezone tz;
 	struct tm *info;
@@ -98,7 +92,7 @@ void print_time(char *format){
 	if (info == NULL)
 		grumble("localtime");
 
-	strftime(buffer, BUFF_SIZE, format, info);
+	strftime(buffer, BUFFT_SIZE, format, info);
 
 	printf("%s\n", buffer);
 }

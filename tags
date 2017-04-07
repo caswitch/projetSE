@@ -1,0 +1,50 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BUFFER_SIZE	src/file.c	7;"	d	file:
+BUFFT_SIZE	src/detecter.c	10;"	d	file:
+BUFF_SIZE	src/buff.c	6;"	d	file:
+Buffer	include/buff.h	/^} Buffer;$/;"	t	typeref:struct:s_buff
+CONVERT_USEC	src/detecter.c	11;"	d	file:
+FICHIER	include/file.h	/^typedef struct FICHIER {$/;"	s
+FICHIER	include/file.h	/^} *FICHIER;$/;"	t	typeref:struct:FICHIER
+WRITE	src/buff.c	7;"	d	file:
+__ASSERT__H_	include/assert.h	2;"	d
+__BUFF__H_	include/buff.h	2;"	d
+__DETECTER__H_	include/detecter.h	2;"	d
+__FILE__H_	include/file.h	2;"	d
+assert	src/assert.c	/^void assert(int return_value, char* msg){$/;"	f
+buff_free	src/buff.c	/^void buff_free(Buffer* b){$/;"	f
+buff_getSize	src/buff.c	/^int buff_getSize(Buffer* b){$/;"	f
+buff_getc	src/buff.c	/^char buff_getc(Buffer* b){$/;"	f
+buff_new	src/buff.c	/^Buffer* buff_new(){$/;"	f
+buff_putc	src/buff.c	/^Buffer* buff_putc(Buffer* b, char c){$/;"	f
+buff_reset	src/buff.c	/^bool buff_reset(Buffer* b){$/;"	f
+buff_setpos	src/buff.c	/^bool buff_setpos(Buffer* b, bool mode, unsigned int pos){$/;"	f
+buff_toString	src/buff.c	/^char* buff_toString(Buffer* b){$/;"	f
+buff_unputc	src/buff.c	/^char buff_unputc(Buffer* b){$/;"	f
+buffer	include/file.h	/^	char* buffer;$/;"	m	struct:FICHIER
+callProgram	src/detecter.c	/^int callProgram(char const *prog, char *const args[]){$/;"	f
+exit_code	src/detecter.c	/^void exit_code(int i){$/;"	f
+fd	include/file.h	/^	int fd;$/;"	m	struct:FICHIER
+grumble	src/assert.c	/^void grumble(char* msg){$/;"	f
+index	include/file.h	/^	int index;$/;"	m	struct:FICHIER
+interval	src/detecter.c	/^void interval(char const *prog, char *const args[], int opt_i, $/;"	f
+length	include/file.h	/^	int length;$/;"	m	struct:FICHIER
+main	src/detecter.c	/^int main(int argc, char* const argv[]){$/;"	f
+mem	include/buff.h	/^	char* mem;$/;"	m	struct:s_buff
+mode	include/file.h	/^	unsigned int mode : 1;$/;"	m	struct:FICHIER
+my_close	src/file.c	/^int my_close(FICHIER f){$/;"	f
+my_getc	src/file.c	/^char my_getc(FICHIER f){$/;"	f
+my_open	src/file.c	/^FICHIER my_open(int fd){	$/;"	f
+output_delta	src/detecter.c	/^Buffer* output_delta(int fd, Buffer* cache){$/;"	f
+print_time	src/detecter.c	/^void print_time(char *format){$/;"	f
+readAddr	include/buff.h	/^	unsigned int readAddr;$/;"	m	struct:s_buff
+s_buff	include/buff.h	/^typedef struct s_buff{$/;"	s
+safe_atoi	src/detecter.c	/^int safe_atoi(char const* str){$/;"	f
+size	include/buff.h	/^	unsigned int size;$/;"	m	struct:s_buff
+usage	src/detecter.c	/^void usage(char * const command) {$/;"	f
+writeAddr	include/buff.h	/^	unsigned int writeAddr;$/;"	m	struct:s_buff

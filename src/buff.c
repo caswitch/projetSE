@@ -1,3 +1,12 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+#define BUFF_SIZE 256
+#define WRITE 1
+
+#include "buff.h"
 #include "assert.h"
 
 void buff_free(Buffer* b){

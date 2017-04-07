@@ -19,19 +19,42 @@
 # couverture-et-tests	: automatise les tests avec rapport de couverture
 #
 
-COV = -coverage
+# Dossier
 
-CFLAGS = -Wall -Wextra -Werror -g $(COVERAGE) $(DEBUG)
+DIROBJ  = obj
+DIRINC  = include
+DIRSRC  = src
 
-PROGS	= detecter
+# Compiler
 
-all: ctags $(PROGS)
+CC      = gcc
+COV     = -coverage
+CFLAGS  = -Wall -Wextra -Werror -g $(COVERAGE) $(DEBUG)
 
-detecter:
+# Dépendances, sources, objets, exécutable
 
+DEPS    = $(wildcard include/*.h)
+SOURCES = $(wildcard src/*.c)
+OBJETS  = $(SOURCES:src/%.c=obj/%.o)
+EXEC    = detecter
+
+.PHONY: all
+all: ctags $(EXEC)
+
+$(EXEC): $(OBJETS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(DIROBJ)/%.o: $(DIRSRC)/%.c $(DEPS)
+	@mkdir -p $(DIROBJ)
+	$(CC) $(CFLAGS) -c -I$(DIRINC) -o $@ $<
+
+# Cibles à appeler manuellement
+
+.PHONY: coverage
 coverage: clean
 	$(MAKE) COVERAGE=$(COV)
 
+.PHONY: gcov
 gcov:
 	gcov *.c
 
@@ -39,21 +62,32 @@ gcov:
 # Si on souhaite utiliser valgrind (conseillé), positionner la
 # variable VALGRIND ou utiliser la cible "test-avec-valgrind"
 
-test:	test-sans-valgrind
+.PHONY: test
+test: test-sans-valgrind
 
+.PHONY: test_sans-valgrind
 test-sans-valgrind: all
 	@for i in test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
 
+.PHONY: test_avec-valgrind
 test-avec-valgrind: all
-	VALGRIND="valgrind -q" ; export VALGRIND ; for i in test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
+	VALGRIND="valgrind -q"
+	export VALGRIND
+	for i in test-*.sh
+	do echo $$i ; sh $$i || exit 1 ; done
 
+.PHONY: couverture-et-tests
 couverture-et-tests: clean coverage test gcov
 
+.PHONY: ctags
 ctags:
-	ctags *.[ch]
+	#ctags src/*.c include/*.h
+	ctags $(SOURCES) $(DEPS)
 
+.PHONY: clean
 clean:
-	rm -f $(PROGS) *.o
+	rm -f $(EXEC)
+	rm -rf $(DIROBJ)
 	rm -f *.gc*
 	rm -f *.log *.tmp
 	rm -f tags core

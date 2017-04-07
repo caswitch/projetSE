@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #ifndef __BUFF__H_
 #define __BUFF__H_
 

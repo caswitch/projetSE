@@ -21,11 +21,13 @@ FICHIER my_open(int fd);
 
 /**
  * @brief Bufferized getchar
- * @details To minimize disk access, caches 512 characters from your file at once
- * in an internal buffer and returns one character from your file at a time.
+ * @details To minimize disk access, caches 512 characters from 
+ * your file at once in an internal buffer and 
+ * returns one character from your file at a time.
  * 
  * @param f 
- * @return The next character, EOF if you reached the end of your file, -1 if something went wrong.
+ * @return The next character, EOF if you reached the end of your file,
+ * -1 if something went wrong.
  */
 char my_getc(FICHIER f);
 

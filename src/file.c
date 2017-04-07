@@ -1,16 +1,16 @@
 #include <stdio.h>
-#include <fcntl.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+
+#include "file.h"
 
 #define BUFFER_SIZE 512
 
 FICHIER my_open(int fd){	
+	FICHIER f = malloc(sizeof(struct FICHIER));
+
 	if (f == NULL)
 		return NULL;
-
-	FICHIER f = malloc(sizeof(struct FICHIER));
 
 	f->buffer = malloc(BUFFER_SIZE * sizeof(char));
 	//f->mode = mode[0];

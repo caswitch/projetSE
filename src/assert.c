@@ -1,3 +1,8 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+
+#include "assert.h"
 
 // Grumbles and exits
 void grumble(char* msg){
