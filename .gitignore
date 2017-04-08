@@ -1,7 +1,7 @@
 *.swp
 .~lock*
 *.pdf
-alarme
-clock
-detecter
-test-100.sh
+doc/html/*
+doc/latex/*
+obj/*
+*.db

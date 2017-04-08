@@ -1,8 +1,10 @@
+/**
+ * @file buff.h
+ * @brief s_buff structure and related methods
+ */
+
 #ifndef __BUFF__H_
 #define __BUFF__H_
-
-#define BUFF_SIZE 256
-#define WRITE 1
 
 /**
  * @brief Infinite text buffer

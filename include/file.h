@@ -1,8 +1,10 @@
+/**
+ * @file file.h
+ * @brief Anything FICHIER related
+ */
+
 #ifndef __FILE__H_
 #define __FILE__H_
-
-#define BUFFER_SIZE 512
-
 
 typedef struct FICHIER {
 	int fd;
