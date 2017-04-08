@@ -10,32 +10,42 @@
 //#define READ 0
 
 /**
- * @brief Infinite text buffer
- * @details Buffer scales up as it fills. Scales by 256 bytes every time the
- * write pointer reaches the end of the buffer using realloc.
- * 
+ * s can be any data type. Currently, it is an alias for char.
  */
 typedef char s;
+
+/**
+ * @brief [For internal use] A node in a linked list
+ * @details Internal use only. Use s_buff.
+ */
 typedef struct s_node {
-	unsigned int size;
-	unsigned int readAddr;
-	unsigned int writeAddr;
-	s* mem;
-	struct s_node* next;
-	struct s_node* prec;
+	unsigned int size;		/*!< Capacity of the node. Should be BUFF_SIZE */
+	unsigned int readAddr;	/*!< Index of the element that will be read 
+	                      	 *   next by getc */
+	unsigned int writeAddr;	/*!< Index in which putc will write */
+	s* mem;					/*!< The actual array */
+	struct s_node* next;	/*!< Pointer to the next node */
+	struct s_node* prec;	/*!< Pointer to the last node */
 } node;
 
+/**
+ * @brief Linked list; Self-expanding data buffer
+ * @details Linked list of nodes, which are short buffers of 256 elements each
+ * An element can be of any type, as defined by 'typedef <type> s'. 
+ * It is by default a linked list of characters 
+ */
 typedef struct s_buff{
-	unsigned int length;
-	node* start;
-	node* readNode;
-	node* writeNode;
+	unsigned int length;	/*!< Total length of the buffer */
+	node* start;			/*!< First node of the chain */
+	node* readNode;			/*!< Node to read from */
+	node* writeNode;		/*!< Node to write to */
 } Buffer;
 
 /**
  * @brief Frees the buffer
+ * And each of its nodes
  * 
- * @param b Pointer
+ * @param b
  */
 void buff_free(Buffer* b);
 

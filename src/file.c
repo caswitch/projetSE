@@ -4,8 +4,8 @@
 
 #include "file.h"
 
-FICHIER my_open(int fd){	
-	FICHIER f = malloc(sizeof(struct FICHIER));
+sFile* my_open(int fd){	
+	sFile* f = malloc(sizeof(struct s_file));
 
 	if (f == NULL)
 		return NULL;
@@ -19,7 +19,7 @@ FICHIER my_open(int fd){
 	return f;
 }
 
-char my_getc(FICHIER f){
+char my_getc(sFile* f){
 	if(f->length == 0 || f->index >= f->length){
 		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
 		f->index = 0;
@@ -31,7 +31,7 @@ char my_getc(FICHIER f){
 	return f->buffer[f->index++];
 }
 
-int my_close(FICHIER f){
+int my_close(sFile* f){
 	if (f == NULL)
 		return -1;
 

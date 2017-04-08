@@ -52,7 +52,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 	//unsigned int i;
 	bool retvalue = false;
 
-	FICHIER f = my_open(fd);
+	sFile* f = my_open(fd);
 
 	buff_reset(cache);
 
