@@ -192,37 +192,28 @@ int main(int argc, char* const argv[]){
 			case 't':
 				opt_t = true;
 				format = optarg;
-#ifdef DEBUG
-					printf("t=%d\n", opt_t);
-					print_time(optarg);
-#endif
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
-#ifdef DEBUG
-					printf("i=%d\n", opt_i);
-#endif
+				if (opt_i <= 0)
+					grumble("Intervalle nul");
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
-#ifdef DEBUG
-					printf("l=%d\n", opt_l);
-#endif
 				break;
 			case 'c':
 				opt_c = true;
-#ifdef DEBUG
-					printf("c=%d\n", opt_c);
-#endif
 				break;
 			case 'h':
 				usage(prog_name);
 				break;
 			case '?':
-				printf("Unknown option: %c\n", optopt);
+				fprintf(stderr, "Unknown option: %c\n", optopt);
+				usage(prog_name);
 				break;
 			case ':':
-				printf("Option -%c takes an argument\n", optopt);
+				fprintf(stderr, "Option -%c takes an argument\n", optopt);
+				usage(prog_name);
 				break;
 			default :
 				grumble("getopt");
