@@ -5,6 +5,9 @@
 
 #ifndef __BUFF__H_
 #define __BUFF__H_
+#define BUFF_SIZE 256
+#define WRITE 1
+//#define READ 0
 
 /**
  * @brief Infinite text buffer
@@ -12,11 +15,21 @@
  * write pointer reaches the end of the buffer using realloc.
  * 
  */
-typedef struct s_buff{
+typedef char s;
+typedef struct s_node {
 	unsigned int size;
 	unsigned int readAddr;
 	unsigned int writeAddr;
-	char* mem;
+	s* mem;
+	struct s_node* next;
+	struct s_node* prec;
+} node;
+
+typedef struct s_buff{
+	unsigned int length;
+	node* start;
+	node* readNode;
+	node* writeNode;
 } Buffer;
 
 /**
@@ -53,13 +66,13 @@ Buffer* buff_putc(Buffer* b, char c);
 int buff_getSize(Buffer* b);
 
 /**
- * @brief Fetches the content of the buffer
- * @details Turns it into a sequential array
+ * @brief Prints the contents of the buffer
+ * @details Uses write
  * 
  * @param b 
- * @return Pointer to a fixed size array
+ * @return -1 if error
  */
-char* buff_toString(Buffer* b);
+int buff_print(Buffer* b);
 
 /**
  * @brief Fetch the individual characters from a buffer in order
@@ -81,17 +94,6 @@ char buff_getc(Buffer* b);
 char buff_unputc(Buffer* b);
 
 /**
- * @brief Set the reading/writing position in the buffer
- * @details The writing position defines the length of the content. 
- * 
- * @param b Buffer
- * @param mode Boolean. 0=read, 1=write
- * @param int Position
- * @return 0 if no error
- */
-bool buff_setpos(Buffer* b, bool mode, unsigned int pos);
-
-/**
  * @brief Resets the buffer entirely
  * @details By setting the reading and writing positions to 0.
  * Does not downsize the buffer. 
@@ -99,6 +101,6 @@ bool buff_setpos(Buffer* b, bool mode, unsigned int pos);
  * @param b 
  * @return 0 if no errors
  */
-bool buff_reset(Buffer* b);
+void buff_reset(Buffer* b);
 
 #endif

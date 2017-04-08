@@ -65,7 +65,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		cache = buff_putc(cache, new);
+		buff_putc(cache, new);
 	}
 	buff_unputc(cache);
 	my_close(f);
@@ -161,7 +161,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 		output = output_delta(fd, output);
 
 		if (output != NULL)
-			if (write(1, buff_toString(output), buff_getSize(output)) == -1){
+			if (buff_print(output) == -1){
 				buff_free(output);
 				grumble("interval write to stdout fail");
 			}

@@ -15,7 +15,6 @@ FICHIER my_open(int fd){
 	f->length = 0;
 	f->index = 0;
 	f->fd = fd;
-	f->mode = 0;
 
 	return f;
 }
@@ -33,15 +32,10 @@ char my_getc(FICHIER f){
 }
 
 int my_close(FICHIER f){
-	short ret=1;
 	if (f == NULL)
 		return -1;
-	if (f->mode == 1 && f->index > 0){
-		//écrit le reste du buffer d'écriture
-		ret = write(f->fd, f->buffer, f->index);
-	}
-	ret = ret || (close(f->fd) == 0);
+
 	free(f->buffer);
 	free(f);
-	return ret;
+	return 0;
 }

@@ -5,13 +5,13 @@
 
 #ifndef __FILE__H_
 #define __FILE__H_
+#define BUFFER_SIZE 256
 
 typedef struct FICHIER {
 	int fd;
 	char* buffer;
 	int length;
 	int index;
-	unsigned int mode : 1;
 } *FICHIER;
 
 /**
