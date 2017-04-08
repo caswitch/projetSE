@@ -31,4 +31,15 @@ DN=/dev/null
 ./detecter -i 1     -l 1 	  programmeInconnu 	|| fail "Programme inconnu"
 ./detecter -i 1 	-l -c     ls -l  			&& fail "-l -c; manque un arg"
 
+# vérifie si le programme détecte un changement dans un fichier 
+# qui ne change jamais
+
+echo 'toto' > ./toto.tmp
+toto=$(./detecter -i 1     -l 2      'cat' 'toto.tmp' | grep -c 'toto')
+if [ $toto -gt 1 ]
+then
+	fail "la comparaison ne marche pas"
+fi
+rm ./toto.tmp
+
 exit 0

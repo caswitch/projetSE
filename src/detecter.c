@@ -61,7 +61,6 @@ Buffer* output_delta(int fd, Buffer* cache){
 		// As we compare, we replace buff[i] with fd[i]
 		new = my_getc(f);
 		old = buff_getc(cache);
-		//printf("%p %d %d\n", cache->readNode, old, new);
 		if (old != new){
 			retvalue = true;
 		}

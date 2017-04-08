@@ -67,7 +67,7 @@ Buffer* buff_new();
 int buff_putc(Buffer* b, char c);
 
 /**
- * @brief Get the length of the text inside the buffer
+ * @brief [Unused] Get the length of the text inside the buffer
  * @details Not the buffer's capacity
  * 
  * @param b 
@@ -104,8 +104,8 @@ char buff_getc(Buffer* b);
 char buff_unputc(Buffer* b);
 
 /**
- * @brief Resets the buffer entirely
- * @details By setting the reading and writing positions to 0.
+ * @brief Sets the reading and writing positions to 0.
+ * @details Does not 
  * Does not downsize the buffer. 
  * 
  * @param b 
