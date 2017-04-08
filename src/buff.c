@@ -14,9 +14,11 @@ void buff_free(Buffer* b){
 	while (cur != NULL){
 		free(cur->mem);
 		cur = cur->next;
-		//printf("\n%p -> %p -> %p", b->readNode->prec, b->readNode, b->readNode->next);
-		//free(b->readNode->prec);
+		//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
+		if (cur)
+			free(cur->prec);
 	}
+	free(cur);
 	free(b);
 
 	return;
@@ -44,22 +46,28 @@ Buffer* buff_new(){
 	return b;
 }
 
-Buffer* buff_putc(Buffer* b, char c){
+int buff_putc(Buffer* b, char c){
 	if (b == NULL)
-		return NULL;
+		return -1;
 
 	if (b->writeNode == NULL)
-		return b;
+		return -1;
 
+	// If there's no more room in the node,
 	if (b->writeNode->writeAddr >= b->writeNode->size){
-		b->writeNode->next = node_new();
-		b->writeNode->next->prec = b->writeNode;
+		// Create a new node, link this node to it
+		if (b->writeNode->next == NULL){
+			b->writeNode->next = node_new();
+			b->writeNode->next->prec = b->writeNode;
+		}
+		// Link the new node to the current
+		// Hop to the next node
 		b->writeNode = b->writeNode->next;
 	}
 
 	b->writeNode->mem[b->writeNode->writeAddr++] = c;
 	b->length++;
-	return b;
+	return 0;
 }
 
 int buff_getSize(Buffer* b){
@@ -73,6 +81,7 @@ int buff_print(Buffer* b){
 	if (b == NULL)
 		return -1;
 
+	// Visit each node of the list from the beginning and write it
 	node* cur = b->start;
 	while (cur != NULL){
 		if (write(1, cur->mem, cur->writeAddr) == -1)
@@ -86,13 +95,21 @@ int buff_print(Buffer* b){
 char buff_getc(Buffer* b){
 	if (b == NULL)
 		return EOF;
-
+	
 	if (b->readNode == NULL)
 		return EOF;
 
+	// If we're at the end of our node
 	if (b->readNode->readAddr >= b->readNode->size){
-		b->readNode = b->readNode->next;
-		return buff_getc(b);
+		// And there is more
+		if (b->readNode->next){
+			// We pick the next node and call ourselves again
+			b->readNode = b->readNode->next;
+			return buff_getc(b);
+		}
+		else {
+			return EOF;
+		}
 	}
 
 	return b->readNode->mem[b->readNode->readAddr++];
@@ -105,7 +122,9 @@ char buff_unputc(Buffer* b){
 	if (b->writeNode == NULL)
 		return EOF;
 
+	// If we're at the start of our node
 	if (b->writeNode->writeAddr == 0){
+		// We pick the last one and call ourselves again
 		b->writeNode = b->writeNode->prec;
 		return buff_unputc(b);
 	}
@@ -118,14 +137,15 @@ void buff_reset(Buffer* b){
 	if (b == NULL)
 		return;
 
+	b->length = 0;
 	b->readNode = b->start;
 	b->writeNode = b->start;
 
+	// Go through each node and reset it
 	node* cur = b->start;
 	while (cur != NULL){
 		cur->readAddr = 0;
 		cur->writeAddr = 0;
-		cur->size = 0;
 		cur = cur->next;
 	}
 }

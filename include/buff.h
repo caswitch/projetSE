@@ -62,9 +62,9 @@ Buffer* buff_new();
  * @param b 
  * @param c 
  * 
- * @return The buffer's new address. Stays unchanged most of the time.
+ * @return -1 if error, 0 otherwise
  */
-Buffer* buff_putc(Buffer* b, char c);
+int buff_putc(Buffer* b, char c);
 
 /**
  * @brief Get the length of the text inside the buffer

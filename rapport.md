@@ -33,6 +33,8 @@ Pour répondre à ces problèmes, nous avons fait quelques choix.
 
 Notre projet est entièrement commenté avec une syntaxe compatible avec doxygen. Il est donc possible de générer cette documentation avec la commande ```doxygen``` à exécuter dans la racine du projet.
 
+Nous avons pris soin d'écrire un maximum de choses en anglais avec l'éditeur de texte [SimpleWriter](https://xkcd.com/simplewriter/) qui nous limite aux 10.000 mots les plus communs de la langue anglaise.
+
 #### Méthode
 
 Notre méthode de travail a été de diviser le problème en un maximum de sous-problèmes et de laisser chaque partie du programme s'occuper de son propre morceau de complexité.
