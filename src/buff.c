@@ -73,7 +73,7 @@ Buffer* buff_new(){
 	return b;
 }
 
-int buff_putc(Buffer* b, char c){
+int buff_putc(Buffer* b, s c){
 	if (b == NULL)
 		return EXIT_FAIL;
 
@@ -111,7 +111,7 @@ int buff_print(Buffer* b){
 	return EXIT_SUCCESS;
 }
 
-char buff_getc(Buffer* b){
+s buff_getc(Buffer* b){
 	if (b == NULL)
 		return EOF;
 	
@@ -134,7 +134,7 @@ char buff_getc(Buffer* b){
 	return b->readNode->mem[b->readNode->readAddr++];
 }
 
-char buff_unputc(Buffer* b){
+s buff_unputc(Buffer* b){
 	if (b == NULL)
 		return EOF;
 
