@@ -142,7 +142,7 @@ s buff_unputc(Buffer* b){
 		return EOF;
 
 	// If we're at the start of our node
-	if (b->writeNode->writeAddr == 0){
+	if (b->writeNode->writeAddr == 1){
 		// We pick the last one and call ourselves again
 		b->writeNode = b->writeNode->prec;
 		return buff_unputc(b);
