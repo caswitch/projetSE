@@ -41,22 +41,30 @@
 		}                                                  \
 	}
 
+#define PTR_NULL(ptr, val)                                 \
+	if (ptr == NULL){                                      \
+		return val;                                        \
+	}
+
+#define PS_FAIL(ps)                                        \
+	if (ps == EXIT_FAIL){                                  \
+		return EXIT_FAIL;                                  \
+	}
 
 
 void buff_free(Buffer* b){
-	if (b == NULL)
-		return;
-
-	node* cur = b->start;
-	while (cur != NULL){
-		free(cur->mem);
-		cur = cur->next;
-		//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
-		if (cur)
-			free(cur->prec);
+	if (b != NULL){
+		node* cur = b->start;
+		while (cur != NULL){
+			free(cur->mem);
+			cur = cur->next;
+			//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
+			if (cur)
+				free(cur->prec);
+		}
+		free(cur);
+		free(b);
 	}
-	free(cur);
-	free(b);
 
 	return;
 }
@@ -72,6 +80,7 @@ node* node_new(){
 	n->next = NULL;
 	n->readAddr = 0;
 	n->writeAddr = 0;
+
 	return n;
 }
 
@@ -87,11 +96,8 @@ Buffer* buff_new(){
 }
 
 int buff_putc(Buffer* b, char c){
-	if (b == NULL)
-		return EXIT_FAIL;
-
-	if (b->writeNode == NULL)
-				return EXIT_FAIL;
+	PTR_NULL(b, EXIT_FAIL)
+	PTR_NULL(b->writeNode, EXIT_FAIL)
 
 	// If there's no more room in the node,
 	if (b->writeNode->writeAddr >= b->writeNode->size){
@@ -110,14 +116,12 @@ int buff_putc(Buffer* b, char c){
 }
 
 int buff_print(Buffer* b){
-	if (b == NULL)
-		return EXIT_FAIL;
+	PTR_NULL(b, EXIT_FAIL) 
 
 	// Visit each node of the list from the beginning and write it
 	node* cur = b->start;
 	while (cur != NULL){
-		if (write(1, cur->mem, cur->writeAddr) == EXIT_FAIL)
-			return EXIT_FAIL;
+		PS_FAIL(write(1, cur->mem, cur->writeAddr))
 		cur = cur->next;
 	}
 
@@ -125,11 +129,8 @@ int buff_print(Buffer* b){
 }
 
 char buff_getc(Buffer* b){
-	if (b == NULL)
-		return EOF;
-	
-	if (b->readNode == NULL)
-		return EOF;
+	PTR_NULL(b, EOF)
+	PTR_NULL(b->readNode, EOF)
 
 	// If we're at the end of our node
 	if (b->readNode->readAddr >= b->readNode->size){
@@ -148,11 +149,8 @@ char buff_getc(Buffer* b){
 }
 
 char buff_unputc(Buffer* b){
-	if (b == NULL)
-		return EOF;
-
-	if (b->writeNode == NULL)
-		return EOF;
+	PTR_NULL(b, EOF)
+	PTR_NULL(b->writeNode, EOF)
 
 	// If we're at the start of our node
 	if (b->writeNode->writeAddr == 0){
@@ -166,17 +164,16 @@ char buff_unputc(Buffer* b){
 }
 
 void buff_reset(Buffer* b){
-	if (b == NULL)
-		return;
+	if (b != NULL){
+		b->readNode = b->start;
+		b->writeNode = b->start;
 
-	b->readNode = b->start;
-	b->writeNode = b->start;
-
-	// Go through each node and reset it
-	node* cur = b->start;
-	while (cur != NULL){
-		cur->readAddr = 0;
-		cur->writeAddr = 0;
-		cur = cur->next;
+		// Go through each node and reset it
+		node* cur = b->start;
+		while (cur != NULL){
+			cur->readAddr = 0;
+			cur->writeAddr = 0;
+			cur = cur->next;
+		}
 	}
 }

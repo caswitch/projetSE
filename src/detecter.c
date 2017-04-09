@@ -12,6 +12,12 @@
 #include "assert.h"
 #include "detecter.h"
 
+#define BUFFT_SIZE 256
+#define CONVERT_USEC 1000
+#define NUMBER_OF_STRINGS 42
+#define STRING_LENGTH 2
+#define ZERO_TERMINATOR 1
+
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str){
 	// If a user enters "test", 
@@ -46,13 +52,15 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-Buffer* output_delta(int fd, Buffer* cache){
+bool output_delta(int fd, Buffer* cache){
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
 	bool retvalue = false;
 
 	sFile* f = my_open(fd);
+	if (f == NULL)
+		grumble("output_delta malloc");
 
 	buff_reset(cache);
 
@@ -65,16 +73,16 @@ Buffer* output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		buff_putc(cache, new);//, "buff_putc");
+		assert(buff_putc(cache, new), "buff_putc");
 	}
 	buff_unputc(cache);
 	my_close(f);
 	
 	if (retvalue){
-		return cache;
+		return true;
 	}
 	else {
-		return NULL;
+		return false;
 	}
 }
 
@@ -121,17 +129,17 @@ int callProgram(char const *prog, char *const args[]){
 	}
 }
 
-void exit_code(int i, bool opt_c){
+void exit_code(bool verbose){
 	int wstatus;
-	static int status = 0;
+	static int status = -1;
 	
 	assert(wait(&wstatus), "wait");
 
 	if (!WIFEXITED(wstatus))
 		grumble("callProgram execvp");
 
-	if (opt_c)
-		if (i == 0 || status != WEXITSTATUS(wstatus)) {
+	if (verbose)
+		if (status != WEXITSTATUS(wstatus)) {
 			status = WEXITSTATUS(wstatus);
 			printf("exit %d\n", status);
 		}
@@ -146,6 +154,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 	int fd;
 	int limite = (opt_l != 0);
 
+	//TODO
 	output = buff_new(output);
 
 	while (!limite || i < opt_l){
@@ -153,15 +162,14 @@ void interval(char const *prog, char *const args[], int opt_i,
 			print_time(format);
 
 		fd = callProgram(prog, args);
-		output = output_delta(fd, output);
 
-		if (output != NULL)
+		if (output_delta(fd, output))
 			if (buff_print(output) == -1){
 				buff_free(output);
 				grumble("interval write to stdout fail");
 			}
 
-		exit_code(i, opt_c);
+		exit_code(opt_c);
 
 		assert(close(fd), "close fd");
 		
