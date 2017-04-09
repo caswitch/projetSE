@@ -19,36 +19,14 @@
 	}                                                      \
 	exit(EXIT_FAILURE);
 
-#define NODE_NULL(alloc, msg, n)                           \
+#define ALLOC_NULL(alloc, msg, n, OPERATION)               \
 	if (alloc == NULL){                                    \
 		if (n == NULL){                                    \
 			GRUMBLE(msg)                                   \
 		}                                                  \
 		else{                                              \
-			free(n);                                       \
+			OPERATION;                                     \
 			GRUMBLE(msg)                                   \
-		}                                                  \
-	}
-
-#define BUFF_NULL(alloc, msg, b)                           \
-	if (alloc == NULL){                                    \
-		if (b == NULL){                                    \
-			GRUMBLE(msg)                                   \
-		}                                                  \
-		else{                                              \
-			buff_free(b);                                  \
-			GRUMBLE(msg);                                  \
-		}                                                  \
-	}
-
-#define FILE_NULL(alloc, msg, f)                           \
-	if (alloc == NULL){                                    \
-		if (f == NULL){                                    \
-			GRUMBLE(msg)                                   \
-		}                                                  \
-		else{                                              \
-			my_close(f);                                  \
-			GRUMBLE(msg);                                  \
 		}                                                  \
 	}
 
@@ -57,9 +35,9 @@
 		return val;                                        \
 	}
 
-#define PS_FAIL(ps)                                        \
-	if (ps == EXIT_FAIL){                                  \
-		return EXIT_FAIL;                                  \
+#define CHECK_VAL(a, val, ret)                                 \
+	if (a == val){                                         \
+		return ret;                                        \
 	}
 
 
@@ -82,11 +60,11 @@ void buff_free(Buffer* b){
 
 node* node_new(){
 	node* n;
-	NODE_NULL((n = malloc(sizeof(struct s_node))),
-			"malloc of node", NULL);
+	ALLOC_NULL((n = malloc(sizeof(struct s_node))),
+			"malloc of node", NULL, free(NULL));
 
-	NODE_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
-			"malloc in node", n)
+	ALLOC_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
+			"malloc in node", n, free(n))
 
 	n->size = BUFF_SIZE;
 	n->prec = NULL;
@@ -99,8 +77,8 @@ node* node_new(){
 
 Buffer* buff_new(){
 	Buffer* b;
-	BUFF_NULL((b = malloc(sizeof(struct s_buff))),
-			"malloc of buffer", NULL);
+	ALLOC_NULL((b = malloc(sizeof(struct s_buff))),
+			"malloc of buffer", NULL, buff_free(NULL))
 
 	b->readNode = node_new();
 	b->writeNode = b->readNode;
@@ -135,7 +113,8 @@ int buff_print(Buffer* b){
 	// Visit each node of the list from the beginning and write it
 	node* cur = b->start;
 	while (cur != NULL){
-		PS_FAIL(write(1, cur->mem, cur->writeAddr))
+		CHECK_VAL(write(1, cur->mem, cur->writeAddr),
+				EXIT_FAIL, EXIT_FAIL)
 		cur = cur->next;
 	}
 
@@ -167,7 +146,7 @@ s buff_unputc(Buffer* b){
 	PTR_NULL(b->writeNode, EOF)
 
 	// If we're at the start of our node
-	if (b->writeNode->writeAddr == 1){
+	if (b->writeNode->writeAddr == 0){
 		// We pick the last one and call ourselves again
 		b->writeNode = b->writeNode->prec;
 		return buff_unputc(b);
@@ -194,11 +173,11 @@ void buff_reset(Buffer* b){
 
 sFile* my_open(int fd){	
 	sFile* f;
-	FILE_NULL((f = malloc(sizeof(struct s_file))),
-			"malloc of file", NULL);
+	ALLOC_NULL((f = malloc(sizeof(struct s_file))),
+			"malloc of file", NULL, my_close(NULL))
 
-	FILE_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
-			"malloc in file", f);
+	ALLOC_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
+			"malloc in file", f, my_close(NULL))
 	//f->mode = mode[0];
 	f->length = 0;
 	f->index = 0;
@@ -211,17 +190,14 @@ char my_getc(sFile* f){
 	if(f->length == 0 || f->index >= f->length){
 		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
 		f->index = 0;
-		if (f->length == -1)
-			return -1;
-		if (f->length == 0)
-			return EOF;
+		CHECK_VAL(f->length, EXIT_FAIL, EXIT_FAIL);
+		CHECK_VAL(f->length, 0, EOF);
 	}
 	return f->buffer[f->index++];
 }
 
 int my_close(sFile* f){
-	if (f == NULL)
-		return -1;
+	PTR_NULL(f, EXIT_FAIL)
 
 	free(f->buffer);
 	free(f);
