@@ -1,0 +1,269 @@
+        -:    0:Source:src/buff_and_file.c
+        -:    0:Programs:2
+        -:    1:#include <stdlib.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <unistd.h>
+        -:    4:#include <stdbool.h>
+        -:    5:#include <errno.h>
+        -:    6:
+        -:    7:#include "buff_and_file.h"
+        -:    8:
+        -:    9:#define EXIT_FAIL -1
+        -:   10:
+        -:   11:/**
+        -:   12: * @def GRUMBLE(msg)
+        -:   13: *
+        -:   14: * @brief Grumbles and exits
+        -:   15: * @details Checks for a system call error via errno.
+        -:   16: * If there was one, it uses perror. 
+        -:   17: * Otherwise, it prints to stderr and exits.
+        -:   18: * 
+        -:   19: * This is to make sure that if you choose to grumble after 
+        -:   20: * something that didn't create an errno, 
+        -:   21: * you don't end up writing "Error: Success !" in your output.
+        -:   22: *
+        -:   23: * @param msg Error message
+        -:   24: */
+        -:   25:#define GRUMBLE(msg)                                       \
+        -:   26:	if (errno){                                            \
+        -:   27:		perror(msg);                                       \
+        -:   28:	}                                                      \
+        -:   29:	else{                                                  \
+        -:   30:		fprintf(stderr, "%s\n", msg);                      \
+        -:   31:	}                                                      \
+        -:   32:	exit(EXIT_FAILURE);
+        -:   33:
+        -:   34:/**
+        -:   35: * @def ALLOC_NULL(alloc, msg, ptr, OPERATION)
+        -:   36: *
+        -:   37: * @brief Checks if the malloc function didi not fail.
+        -:   38: * @brief If so, free, grumble and exits.
+        -:   39: * 
+        -:   40: * @param alloc the return pointer of a malloc
+        -:   41: * @param msg Error pessage
+        -:   42: * @param ptr a pointer to check if is NULL or not
+        -:   43: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   44: */
+        -:   45:#define ALLOC_NULL(alloc, msg, ptr, OPERATION)             \
+        -:   46:	if (alloc == NULL){                                    \
+        -:   47:		if (ptr == NULL){                                  \
+        -:   48:			GRUMBLE(msg)                                   \
+        -:   49:		}                                                  \
+        -:   50:		else{                                              \
+        -:   51:			OPERATION;                                     \
+        -:   52:			GRUMBLE(msg)                                   \
+        -:   53:		}                                                  \
+        -:   54:	}
+        -:   55:
+        -:   56:/**
+        -:   57: * @def ASSERT(val, OPERATION)
+        -:   58: *
+        -:   59: * @brief Checks if val is -1. If so, call OPERATION.
+        -:   60: * 
+        -:   61: * @param val int
+        -:   62: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   63: */
+        -:   64:#define ASSERT(val, OPERATION)                             \
+        -:   65:	if (val == -1){                                        \
+        -:   66:		OPERATION;                                         \
+        -:   67:	}
+        -:   68:
+        -:   69:/**
+        -:   70: * @def CHECK_NULL(ptr, OPERATION)
+        -:   71: *
+        -:   72: * @brief Checks if ptr is NULL. If so, call OPERATION.
+        -:   73: * 
+        -:   74: * @param ptr a pointer
+        -:   75: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   76: */
+        -:   77:#define CHECK_NULL(ptr, OPERATION)                         \
+        -:   78:	if (ptr == NULL){                                      \
+        -:   79:		OPERATION;                                         \
+        -:   80:	}
+        -:   81:
+        -:   82:/**
+        -:   83: * @def CHECK_ZERO(val, OPERATION)
+        -:   84: *
+        -:   85: * @brief Checks if val is 0. If so, call OPERATION.
+        -:   86: * 
+        -:   87: * @param val int
+        -:   88: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   89: */
+        -:   90:#define CHECK_ZERO(val, OPERATION)                         \
+        -:   91:	if (val == 0){                                         \
+        -:   92:		OPERATION;                                         \
+        -:   93:	}
+        -:   94:
+        -:   95:
+       13:   96:void buff_free(Buffer* b){
+       13:   97:	if (b != NULL){
+       13:   98:		node* cur = b->start;
+   327720:   99:		while (cur != NULL){
+   327694:  100:			free(cur->mem);
+   327694:  101:			cur = cur->next;
+        -:  102:			//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
+   327694:  103:			if (cur)
+   327681:  104:				free(cur->prec);
+        -:  105:		}
+       13:  106:		free(cur);
+       13:  107:		free(b);
+        -:  108:	}
+        -:  109:
+       13:  110:	return;
+        -:  111:}
+        -:  112:
+   327696:  113:node* node_new(){
+        -:  114:	node* n;
+   327696:  115:	ALLOC_NULL((n = malloc(sizeof(struct s_node))),
+        -:  116:			"malloc of node", NULL, free(NULL));
+        -:  117:
+   327696:  118:	ALLOC_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
+        -:  119:			"malloc in node", n, free(n))
+        -:  120:
+   327696:  121:	n->size = BUFF_SIZE;
+   327696:  122:	n->prec = NULL;
+   327696:  123:	n->next = NULL;
+   327696:  124:	n->readAddr = 0;
+   327696:  125:	n->writeAddr = 0;
+        -:  126:
+   327696:  127:	return n;
+        -:  128:}
+        -:  129:
+       15:  130:Buffer* buff_new(){
+        -:  131:	Buffer* b;
+       15:  132:	ALLOC_NULL((b = malloc(sizeof(struct s_buff))),
+        -:  133:			"malloc of buffer", NULL, buff_free(NULL))
+        -:  134:
+       15:  135:	b->readNode = node_new();
+       15:  136:	b->writeNode = b->readNode;
+       15:  137:	b->start = b->readNode;
+        -:  138:
+       15:  139:	return b;
+        -:  140:}
+        -:  141:
+134218209:  142:int buff_putc(Buffer* b, char c){
+134218209:  143:	CHECK_NULL(b, return EXIT_FAIL)
+134218209:  144:	CHECK_NULL(b->writeNode, return EXIT_FAIL)
+        -:  145:
+        -:  146:	// If there's no more room in the node,
+134218209:  147:	if (b->writeNode->writeAddr >= b->writeNode->size){
+        -:  148:		// Create a new node, link this node to it
+   524288:  149:		if (b->writeNode->next == NULL){
+   327681:  150:			b->writeNode->next = node_new();
+   327681:  151:			b->writeNode->next->prec = b->writeNode;
+        -:  152:		}
+        -:  153:		// Link the new node to the current
+        -:  154:		// Hop to the next node
+   524288:  155:		b->writeNode = b->writeNode->next;
+        -:  156:	}
+        -:  157:
+134218209:  158:	b->writeNode->mem[b->writeNode->writeAddr++] = c;
+134218209:  159:	return EXIT_SUCCESS;
+        -:  160:}
+        -:  161:
+       57:  162:int buff_print(Buffer* b){
+       57:  163:	CHECK_NULL(b, return EXIT_FAIL) 
+        -:  164:
+        -:  165:	// Visit each node of the list from the beginning and write it
+       57:  166:	node* cur = b->start;
+   524459:  167:	while (cur != NULL){
+   524345:  168:		ASSERT(write(1, cur->mem, cur->writeAddr), return EXIT_FAIL)
+   524345:  169:		cur = cur->next;
+        -:  170:	}
+        -:  171:
+       57:  172:	return EXIT_SUCCESS;
+        -:  173:}
+        -:  174:
+134742477:  175:s buff_getc(Buffer* b){
+134742477:  176:	CHECK_NULL(b, return EOF)
+134742477:  177:	CHECK_NULL(b->readNode, return EOF)
+        -:  178:
+        -:  179:	// If we're at the end of our node
+134742477:  180:	if (b->readNode->readAddr >= b->readNode->size){
+        -:  181:		// And there is more
+   524288:  182:		if (b->readNode->next){
+        -:  183:			// We pick the next node and call ourselves again
+   524268:  184:			b->readNode = b->readNode->next;
+   524268:  185:			return buff_getc(b);
+        -:  186:		}
+        -:  187:		else {
+       20:  188:			return EOF;
+        -:  189:		}
+        -:  190:	}
+        -:  191:
+134218189:  192:	return b->readNode->mem[b->readNode->readAddr++];
+        -:  193:}
+        -:  194:
+       67:  195:s buff_unputc(Buffer* b){
+       67:  196:	CHECK_NULL(b, return EOF)
+       67:  197:	CHECK_NULL(b->writeNode, return EOF)
+        -:  198:
+        -:  199:	// If we're at the start of our node
+       67:  200:	CHECK_ZERO(b->writeNode->writeAddr, return EOF)
+        -:  201:
+        -:  202:	/*
+        -:  203:		// This is correct because of buff_putc's behaviour
+        -:  204:		// 
+        -:  205:		// Indeed, writeAddr will never be 0 unless we're at the absolute
+        -:  206:		// start of the buffer. It skips 0. It goes from 255 to 256, which
+        -:  207:		// is out of bounds, detects that 256 is out of bounds, changes node,
+        -:  208:		// then writes at 0 in the next and sets writeAddr to 1.
+        -:  209:		// So, a mere --writeAddr is always enough !
+        -:  210:
+        -:  211:		if (b->writeNode->prec){
+        -:  212:			b->writeNode = b->writeNode->prec;
+        -:  213:			return buff_unputc(b);
+        -:  214:		}
+        -:  215:	//*/
+        -:  216:
+       67:  217:	return b->writeNode->mem[--b->writeNode->writeAddr];
+        -:  218:}
+        -:  219:
+       67:  220:void buff_reset(Buffer* b){
+       67:  221:	if (b != NULL){
+       67:  222:		b->readNode = b->start;
+       67:  223:		b->writeNode = b->start;
+        -:  224:
+        -:  225:		// Go through each node and reset it
+       67:  226:		node* cur = b->start;
+   196808:  227:		while (cur != NULL){
+   196674:  228:			cur->readAddr = 0;
+   196674:  229:			cur->writeAddr = 0;
+   196674:  230:			cur = cur->next;
+        -:  231:		}
+        -:  232:	}
+       67:  233:}
+        -:  234:
+       67:  235:sFile* my_open(int fd){	
+        -:  236:	sFile* f;
+       67:  237:	ALLOC_NULL((f = malloc(sizeof(struct s_file))),
+        -:  238:			"malloc of file", NULL, my_close(NULL))
+        -:  239:
+       67:  240:	ALLOC_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
+        -:  241:			"malloc in file", f, my_close(f))
+        -:  242:	//f->mode = mode[0];
+       67:  243:	f->length = 0;
+       67:  244:	f->index = 0;
+       67:  245:	f->fd = fd;
+        -:  246:
+       67:  247:	return f;
+        -:  248:}
+        -:  249:
+134218209:  250:char my_getc(sFile* f){
+134218209:  251:	if(f->length == 0 || f->index >= f->length){
+   524384:  252:		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
+   524384:  253:		f->index = 0;
+   524384:  254:		ASSERT(f->length, return EXIT_FAIL);
+   524384:  255:		CHECK_ZERO(f->length, return EOF);
+        -:  256:	}
+134218142:  257:	return f->buffer[f->index++];
+        -:  258:}
+        -:  259:
+       67:  260:int my_close(sFile* f){
+       67:  261:	CHECK_NULL(f, return EXIT_FAIL)
+        -:  262:
+       67:  263:	free(f->buffer);
+       67:  264:	free(f);
+       67:  265:	return 0;
+        -:  266:}
+        -:  267:

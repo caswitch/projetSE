@@ -1,0 +1,330 @@
+        -:    0:Source:src/detecter.c
+        -:    0:Programs:2
+        -:    1:#include <stdlib.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <unistd.h>
+        -:    4:#include <stdbool.h>
+        -:    5:#include <string.h>
+        -:    6:#include <sys/time.h>
+        -:    7:#include <time.h>
+        -:    8:#include <wait.h>
+        -:    9:#include <errno.h>
+        -:   10:
+        -:   11:#include "buff_and_file.h"
+        -:   12:#include "detecter.h"
+        -:   13:
+        -:   14:#define BUFFT_SIZE 256
+        -:   15:#define CONVERT_USEC 1000
+        -:   16:#define NUMBER_OF_STRINGS 42
+        -:   17:#define STRING_LENGTH 2
+        -:   18:#define ZERO_TERMINATOR 1
+        -:   19:
+        -:   20:/**
+        -:   21: * @def GRUMBLE(msg)
+        -:   22: *
+        -:   23: * @brief Grumbles and exits
+        -:   24: * @details Checks for a system call error via errno.
+        -:   25: * If there was one, it uses perror. 
+        -:   26: * Otherwise, it prints to stderr and exits.
+        -:   27: * 
+        -:   28: * This is to make sure that if you choose to grumble after 
+        -:   29: * something that didn't create an errno, 
+        -:   30: * you don't end up writing "Error: Success !" in your output.
+        -:   31: *
+        -:   32: * @param msg Error message
+        -:   33: */
+        -:   34:#define GRUMBLE(msg)                                       \
+        -:   35:	if (errno){                                            \
+        -:   36:		perror(msg);                                       \
+        -:   37:	}                                                      \
+        -:   38:	else{                                                  \
+        -:   39:		fprintf(stderr, "%s\n", msg);                      \
+        -:   40:	}                                                      \
+        -:   41:	exit(EXIT_FAILURE);
+        -:   42:
+        -:   43:/**
+        -:   44: * @def ALLOC_NULL(alloc, msg, ptr, OPERATION)
+        -:   45: *
+        -:   46: * @brief Checks if the malloc function didi not fail.
+        -:   47: * @brief If so, free, grumble and exits.
+        -:   48: * 
+        -:   49: * @param alloc the return pointer of a malloc
+        -:   50: * @param msg Error pessage
+        -:   51: * @param ptr a pointer to check if is NULL or not
+        -:   52: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   53: */
+        -:   54:#define ALLOC_NULL(alloc, msg, ptr, OPERATION)             \
+        -:   55:	if (alloc == NULL){                                    \
+        -:   56:		if (ptr == NULL){                                  \
+        -:   57:			GRUMBLE(msg)                                   \
+        -:   58:		}                                                  \
+        -:   59:		else{                                              \
+        -:   60:			OPERATION;                                     \
+        -:   61:			GRUMBLE(msg)                                   \
+        -:   62:		}                                                  \
+        -:   63:	}
+        -:   64:
+        -:   65:/**
+        -:   66: * @def ASSERT(val, OPERATION)
+        -:   67: *
+        -:   68: * @brief Checks if val is -1. If so, call OPERATION.
+        -:   69: * 
+        -:   70: * @param val int
+        -:   71: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   72: */
+        -:   73:#define ASSERT(val, OPERATION)                             \
+        -:   74:	if (val == -1){                                        \
+        -:   75:		OPERATION;                                         \
+        -:   76:	}
+        -:   77:
+        -:   78:/**
+        -:   79: * @def CHECK_NULL(ptr, OPERATION)
+        -:   80: *
+        -:   81: * @brief Checks if ptr is NULL. If so, call OPERATION.
+        -:   82: * 
+        -:   83: * @param ptr a pointer
+        -:   84: * @param OPERATION can be an instruction, a fonction or a macro
+        -:   85: */
+        -:   86:#define CHECK_NULL(ptr, OPERATION)                         \
+        -:   87:	if (ptr == NULL){                                      \
+        -:   88:		OPERATION;                                         \
+        -:   89:	}
+        -:   90:
+        -:   91:
+        -:   92:// Converts a string to an int and errors out if not possible
+       37:   93:int safe_atoi(char const* str){
+        -:   94:	// If a user enters "test", 
+        -:   95:	// I don't want atoi to say "test" means 0. I want an error.
+        -:   96:
+       74:   97:	for (unsigned int i = 0; i < strlen(str); ++i)
+       41:   98:		if (str[i] < '0' || str[i] > '9'){
+        4:   99:			GRUMBLE("String to number conversion fail")
+        -:  100:		}
+        -:  101:
+       33:  102:	return atoi(str);
+        -:  103:}
+        -:  104:
+        -:  105:// Prints a nice reminder of how to use the program
+        8:  106:void usage(char * const command) {
+        8:  107:	printf("Usage: %s [-t format] [-i range] "
+        -:  108:		   "[-l limit] [-c] prog arg ... arg\n\n", command);
+        -:  109:
+        8:  110:	printf("Periodically executes a program and detects changes "
+        -:  111:		   "in its output.\n\n");
+        -:  112:
+        8:  113:	printf("Options:\n"
+        -:  114:		   "  -i   Specify time interval (in milliseconds) between each call "
+        -:  115:		   "(default value: 10,000 ms)\n"
+        -:  116:		   "  -l   Specify the number of calls (default value: 0, no limit)\n"
+        -:  117:		   "  -c   Detects changes in the return value too (default value: 0)\n"
+        -:  118:		   "  -t   Causes the date and time of each launch to be displayed, "
+        -:  119:		   "with the format specified, compatible with the strftime library "
+        -:  120:		   "function (default: no display)\n"
+        -:  121:		   "\tExample: %s -t '%%H:%%M:%%S'\n"
+        -:  122:		   "  -h   Display this help and exit\n", command);
+        -:  123:
+        8:  124:	exit(EXIT_FAILURE);
+        -:  125:}
+        -:  126:
+       67:  127:bool output_delta(int fd, Buffer* cache){
+       67:  128:	char new = '_';
+       67:  129:	char old = '_';
+        -:  130:	//unsigned int i;
+       67:  131:	bool retvalue = false;
+        -:  132:
+       67:  133:	sFile* f = my_open(fd);
+       67:  134:	ALLOC_NULL(f, "output_delta malloc", NULL, my_close(NULL))
+        -:  135:
+       67:  136:	buff_reset(cache);
+        -:  137:
+       67:  138:	while (new != EOF){
+        -:  139:		// Compare last output with what comes out of fd
+        -:  140:		// As we compare, we replace buff[i] with fd[i]
+134218209:  141:		new = my_getc(f);
+134218209:  142:		old = buff_getc(cache);
+134218209:  143:		if (old != new){
+ 83886537:  144:			retvalue = true;
+        -:  145:		}
+        -:  146:		
+134218209:  147:		ASSERT(buff_putc(cache, new), 
+        -:  148:				buff_free(cache); my_close(f); GRUMBLE("buff_putc"))
+        -:  149:	}
+       67:  150:	buff_unputc(cache);
+       67:  151:	my_close(f);
+        -:  152:	
+       67:  153:	if (retvalue){
+       57:  154:		return true;
+        -:  155:	}
+        -:  156:	else {
+       10:  157:		return false;
+        -:  158:	}
+        -:  159:}
+        -:  160:
+       12:  161:void print_time(char *format){
+        -:  162:	char buffer[BUFFT_SIZE];
+        -:  163:	struct timeval tv;
+        -:  164:	struct timezone tz;
+        -:  165:	struct tm *info;
+        -:  166:
+       12:  167:	ASSERT(gettimeofday(&tv, &tz), 
+        -:  168:			GRUMBLE("gettimofday"))
+       12:  169:	info = localtime(&tv.tv_sec);
+        -:  170:
+       12:  171:	CHECK_NULL(info, 
+        -:  172:			GRUMBLE("localtime"))
+        -:  173:
+       12:  174:	strftime(buffer, BUFFT_SIZE, format, info);
+        -:  175:
+       12:  176:	printf("%s\n", buffer);
+       12:  177:}
+        -:  178:
+       67:  179:int callProgram(char const *prog, char *const args[]){
+        -:  180:	int tube[2];
+        -:  181:	pid_t pid;
+        -:  182:	
+       67:  183:	ASSERT(pipe(tube), 
+        -:  184:			GRUMBLE("callProgram pipe"))
+       67:  185:	pid = fork();
+        -:  186:
+      134:  187:	ASSERT(pid, 
+        -:  188:			GRUMBLE("callProgram frork"))
+      134:  189:	if (pid == 0) { //Child
+       67:  190:		ASSERT(close(tube[0]),
+        -:  191:				GRUMBLE("callProgram child close tube[0]"))
+        -:  192:
+       67:  193:		ASSERT(dup2(tube[1], 1),
+        -:  194:			GRUMBLE("callProgram child redirect stdout > tube[1]"))
+        -:  195:
+       67:  196:		execvp(prog, args);
+       67:  197:		ASSERT(kill(getpid(), SIGUSR1),
+        -:  198:				GRUMBLE("kill failure child"))
+        -:  199:	}
+        -:  200:
+        -:  201:	//Parent
+       67:  202:	ASSERT(close(tube[1]),
+        -:  203:			GRUMBLE("callProgram father close tube[1]"))
+        -:  204:
+       67:  205:	return tube[0];
+        -:  206:}
+        -:  207:
+       67:  208:void exit_code(bool verbose){
+        -:  209:	int wstatus;
+        -:  210:	static int status = -1;
+        -:  211:	
+       67:  212:	ASSERT(wait(&wstatus),
+        -:  213:			GRUMBLE("wait"))
+        -:  214:
+       67:  215:	if (!WIFEXITED(wstatus)) {
+        2:  216:		GRUMBLE("callProgram execvp")
+        -:  217:	}
+        -:  218:
+       65:  219:	if (verbose)
+       13:  220:		if (status != WEXITSTATUS(wstatus)) {
+       13:  221:			status = WEXITSTATUS(wstatus);
+       13:  222:			printf("exit %d\n", status);
+        -:  223:		}
+        -:  224:
+       65:  225:	fflush (stdout);
+       65:  226:}
+        -:  227:
+       15:  228:void interval(char const *prog, char *const args[], int opt_i, 
+        -:  229:			  int opt_l, bool opt_c, bool opt_t, char* format){
+       15:  230:	int i = 0;
+       15:  231:	Buffer* output = NULL;
+        -:  232:	int fd;
+       15:  233:	int limite = (opt_l != 0);
+        -:  234:
+       15:  235:	output = buff_new(output);
+        -:  236:
+       15:  237:	while (!limite || i < opt_l){
+       67:  238:		if (opt_t)
+       12:  239:			print_time(format);
+        -:  240:
+       67:  241:		fd = callProgram(prog, args);
+        -:  242:
+       67:  243:		if (output_delta(fd, output))
+       57:  244:			ASSERT(buff_print(output),
+        -:  245:					buff_free(output); GRUMBLE("interval write to stdout fail"))
+        -:  246:
+       67:  247:		exit_code(opt_c);
+        -:  248:
+       65:  249:		ASSERT(close(fd),
+        -:  250:				GRUMBLE("close fd"))
+        -:  251:		
+       65:  252:		i++;
+       65:  253:		ASSERT(usleep(opt_i* CONVERT_USEC),
+        -:  254:				GRUMBLE("usleep"))
+        -:  255:	}
+       13:  256:	buff_free(output);
+       13:  257:}
+        -:  258:
+        4:  259:void check_format (const char * optarg, char * const command) {
+        4:  260:	char format_spec [NUMBER_OF_STRINGS][STRING_LENGTH + ZERO_TERMINATOR] = {
+        -:  261:		"%a","%A","%b","%B","%c","%C","%d","%D","%e","%E","%F","%G","%g",
+        -:  262:		"%h","%H","%I","%j","%k","%l","%m","%M","%n","%O","%p","%P","%r",
+        -:  263:		"%R","%s","%S","%t","%T","%u","%U","%V","%w","%W","%x","%X","%y",
+        -:  264:		"%Y","%Z","%+"};
+        -:  265:
+       97:  266:	for (int i = 0; i < 42; i++) {
+       96:  267:		if (strstr(optarg, format_spec[i]) != NULL)
+        6:  268:			return;
+        -:  269:	}
+        -:  270:	
+        1:  271:	printf ("Invalid format for -t option\n\n");
+        1:  272:	usage(command);
+        -:  273:}
+        -:  274:
+       28:  275:int main(int argc, char* const argv[]){
+        -:  276:	int option;
+       28:  277:	bool opt_t = false;        // Time is not printed
+       28:  278:	int opt_i = 10000;         // Default value for -i (milliseconds)
+       28:  279:	int opt_l = 0;             // Default value for -l 
+        -:  280:	                           // (no limit number of execution)
+       28:  281:	bool opt_c = false;        // Change of return code is not detected
+       28:  282:	char* format = NULL;       // -t argument
+       28:  283:	char* prog_name = argv[0]; // programme to execute
+        -:  284:
+       96:  285:	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
+       51:  286:		switch(option){
+        -:  287:			case 't':
+        4:  288:				check_format(optarg, prog_name);
+        3:  289:				opt_t = true;
+        3:  290:				format = optarg;
+        3:  291:				break;
+        -:  292:			case 'i':
+       19:  293:				opt_i = safe_atoi(optarg);
+       17:  294:				if (opt_i <= 0) {
+        1:  295:					GRUMBLE("Interval nul")
+        -:  296:				}
+       16:  297:				break;
+        -:  298:			case 'l':
+       18:  299:				opt_l = safe_atoi(optarg);
+       16:  300:				break;
+        -:  301:			case 'c':
+        5:  302:				opt_c = true;
+        5:  303:				break;
+        -:  304:			case 'h':
+        1:  305:				usage(prog_name);
+        -:  306:			case '?':
+        1:  307:				fprintf(stderr, "Unknown option: %c\n\n", optopt);
+        1:  308:				usage(prog_name);
+        -:  309:			case ':':
+        3:  310:				fprintf(stderr, "Option -%c takes an argument\n", optopt);
+        3:  311:				usage(prog_name);
+        -:  312:			/* We have already cases of ? and :
+        -:  313:			default :
+        -:  314:				GRUMBLE("getopt")
+        -:  315:			*/
+        -:  316:		}
+        -:  317:	}
+        -:  318:
+       17:  319:	argc -= optind;
+       17:  320:	argv += optind;
+        -:  321:
+       17:  322:	if (argc == 0)
+        2:  323:		usage(prog_name);
+        -:  324:
+       15:  325:	interval(argv[0], argv, opt_i, opt_l, opt_c, opt_t, format);
+        -:  326:
+       13:  327:	return EXIT_SUCCESS;
+        -:  328:}
