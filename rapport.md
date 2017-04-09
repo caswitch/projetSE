@@ -1,5 +1,7 @@
 # Table des matières
 
+Nicolat Argyriou
+Marie-France Kommer
 
 ## Sujet
 
@@ -18,10 +20,11 @@ Le projet a amené son lot de difficultés auxquelles nous nous attendions,
 
 Et quelques unes plus spécifiques
 
+* Comment diviser le problème en sous-problème et les articuler ensemble pour avoir un programme fonctionnel ?
 * Comment comparer les sorties entre les différents appels du programme passé en argument ? 
 * Comment allons-nous nous débrouiller pour stocker en mémoire ces sorties dont nous ne connaissons pas la taille finale avant d'avoir reçu leur EOF ?
-* Apprendre et utiliser les informations liées à la couverture de code.
-* Passer et créer des jeux de tests pour le programme.
+* Comment utiliser les informations liées à la couverture de code et comment augmenter cette couverture ?
+* Comment trouver un jeu de tests pertinent pour couvrir le code et tester son bon fonctionnement ?
 
 Pour répondre à ces problèmes, nous avons fait quelques choix. 
 
