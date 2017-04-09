@@ -1,0 +1,232 @@
+        -:    0:Source:src/buff_and_file.c
+        -:    0:Programs:3
+        -:    1:#include <stdlib.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <unistd.h>
+        -:    4:#include <stdbool.h>
+        -:    5:#include <errno.h>
+        -:    6:
+        -:    7:#include "buff_and_file.h"
+        -:    8:#include "assert.h"
+        -:    9:
+        -:   10:#define EXIT_FAIL -1
+        -:   11:
+        -:   12:// Small 'if' to avoid the "Error: Success" problem
+        -:   13:#define GRUMBLE(msg)                                       \
+        -:   14:	if (errno){                                            \
+        -:   15:		perror(msg);                                       \
+        -:   16:	}                                                      \
+        -:   17:	else{                                                  \
+        -:   18:		fprintf(stderr, "%s\n", msg);                      \
+        -:   19:	}                                                      \
+        -:   20:	exit(EXIT_FAILURE);
+        -:   21:
+        -:   22:#define NODE_NULL(alloc, msg, n)                           \
+        -:   23:	if (alloc == NULL){                                    \
+        -:   24:		if (n == NULL){                                    \
+        -:   25:			GRUMBLE(msg)                                   \
+        -:   26:		}                                                  \
+        -:   27:		else{                                              \
+        -:   28:			free(n);                                       \
+        -:   29:			GRUMBLE(msg)                                   \
+        -:   30:		}                                                  \
+        -:   31:	}
+        -:   32:
+        -:   33:#define BUFF_NULL(alloc, msg, b)                           \
+        -:   34:	if (alloc == NULL){                                    \
+        -:   35:		if (b == NULL){                                    \
+        -:   36:			GRUMBLE(msg)                                   \
+        -:   37:		}                                                  \
+        -:   38:		else{                                              \
+        -:   39:			buff_free(b);                                  \
+        -:   40:			GRUMBLE(msg);                                  \
+        -:   41:		}                                                  \
+        -:   42:	}
+        -:   43:
+        -:   44:#define FILE_NULL(alloc, msg, f)                           \
+        -:   45:	if (alloc == NULL){                                    \
+        -:   46:		if (f == NULL){                                    \
+        -:   47:			GRUMBLE(msg)                                   \
+        -:   48:		}                                                  \
+        -:   49:		else{                                              \
+        -:   50:			my_close(f);                                  \
+        -:   51:			GRUMBLE(msg);                                  \
+        -:   52:		}                                                  \
+        -:   53:	}
+        -:   54:
+        -:   55:#define PTR_NULL(ptr, val)                                 \
+        -:   56:	if (ptr == NULL){                                      \
+        -:   57:		return val;                                        \
+        -:   58:	}
+        -:   59:
+        -:   60:#define PS_FAIL(ps)                                        \
+        -:   61:	if (ps == EXIT_FAIL){                                  \
+        -:   62:		return EXIT_FAIL;                                  \
+        -:   63:	}
+        -:   64:
+        -:   65:
+       12:   66:void buff_free(Buffer* b){
+       12:   67:	if (b != NULL){
+       12:   68:		node* cur = b->start;
+   327716:   69:		while (cur != NULL){
+   327692:   70:			free(cur->mem);
+   327692:   71:			cur = cur->next;
+        -:   72:			//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
+   327692:   73:			if (cur)
+   327680:   74:				free(cur->prec);
+        -:   75:		}
+       12:   76:		free(cur);
+       12:   77:		free(b);
+        -:   78:	}
+        -:   79:
+       12:   80:	return;
+        -:   81:}
+        -:   82:
+   327694:   83:node* node_new(){
+        -:   84:	node* n;
+   327694:   85:	NODE_NULL((n = malloc(sizeof(struct s_node))),
+        -:   86:			"malloc of node", NULL);
+        -:   87:
+   327694:   88:	NODE_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
+        -:   89:			"malloc in node", n)
+        -:   90:
+   327694:   91:	n->size = BUFF_SIZE;
+   327694:   92:	n->prec = NULL;
+   327694:   93:	n->next = NULL;
+   327694:   94:	n->readAddr = 0;
+   327694:   95:	n->writeAddr = 0;
+        -:   96:
+   327694:   97:	return n;
+        -:   98:}
+        -:   99:
+       14:  100:Buffer* buff_new(){
+        -:  101:	Buffer* b;
+       14:  102:	BUFF_NULL((b = malloc(sizeof(struct s_buff))),
+        -:  103:			"malloc of buffer", NULL);
+        -:  104:
+       14:  105:	b->readNode = node_new();
+       14:  106:	b->writeNode = b->readNode;
+       14:  107:	b->start = b->readNode;
+        -:  108:
+       14:  109:	return b;
+        -:  110:}
+        -:  111:
+134217952:  112:int buff_putc(Buffer* b, char c){
+134217952:  113:	PTR_NULL(b, EXIT_FAIL)
+134217952:  114:	PTR_NULL(b->writeNode, EXIT_FAIL)
+        -:  115:
+        -:  116:	// If there's no more room in the node,
+134217952:  117:	if (b->writeNode->writeAddr >= b->writeNode->size){
+        -:  118:		// Create a new node, link this node to it
+   524287:  119:		if (b->writeNode->next == NULL){
+   327680:  120:			b->writeNode->next = node_new();
+   327680:  121:			b->writeNode->next->prec = b->writeNode;
+        -:  122:		}
+        -:  123:		// Link the new node to the current
+        -:  124:		// Hop to the next node
+   524287:  125:		b->writeNode = b->writeNode->next;
+        -:  126:	}
+        -:  127:
+134217952:  128:	b->writeNode->mem[b->writeNode->writeAddr++] = c;
+134217952:  129:	return EXIT_SUCCESS;
+        -:  130:}
+        -:  131:
+       56:  132:int buff_print(Buffer* b){
+       56:  133:	PTR_NULL(b, EXIT_FAIL) 
+        -:  134:
+        -:  135:	// Visit each node of the list from the beginning and write it
+       56:  136:	node* cur = b->start;
+   524455:  137:	while (cur != NULL){
+   524343:  138:		PS_FAIL(write(1, cur->mem, cur->writeAddr))
+   524343:  139:		cur = cur->next;
+        -:  140:	}
+        -:  141:
+       56:  142:	return EXIT_SUCCESS;
+        -:  143:}
+        -:  144:
+134742220:  145:s buff_getc(Buffer* b){
+134742220:  146:	PTR_NULL(b, EOF)
+134742220:  147:	PTR_NULL(b->readNode, EOF)
+        -:  148:
+        -:  149:	// If we're at the end of our node
+134742220:  150:	if (b->readNode->readAddr >= b->readNode->size){
+        -:  151:		// And there is more
+   524287:  152:		if (b->readNode->next){
+        -:  153:			// We pick the next node and call ourselves again
+   524268:  154:			b->readNode = b->readNode->next;
+   524268:  155:			return buff_getc(b);
+        -:  156:		}
+        -:  157:		else {
+       19:  158:			return EOF;
+        -:  159:		}
+        -:  160:	}
+        -:  161:
+134217933:  162:	return b->readNode->mem[b->readNode->readAddr++];
+        -:  163:}
+        -:  164:
+       66:  165:s buff_unputc(Buffer* b){
+       66:  166:	PTR_NULL(b, EOF)
+       66:  167:	PTR_NULL(b->writeNode, EOF)
+        -:  168:
+        -:  169:	// If we're at the start of our node
+       66:  170:	if (b->writeNode->writeAddr == 0){
+        -:  171:		// We pick the last one and call ourselves again
+    #####:  172:		b->writeNode = b->writeNode->prec;
+    #####:  173:		return buff_unputc(b);
+        -:  174:	}
+        -:  175:
+        -:  176:	//printf("%d/%d\n", b->writeNode->writeAddr, b->writeNode->size);
+       66:  177:	return b->writeNode->mem[b->writeNode->writeAddr--];
+        -:  178:}
+        -:  179:
+       66:  180:void buff_reset(Buffer* b){
+       66:  181:	if (b != NULL){
+       66:  182:		b->readNode = b->start;
+       66:  183:		b->writeNode = b->start;
+        -:  184:
+        -:  185:		// Go through each node and reset it
+       66:  186:		node* cur = b->start;
+   196805:  187:		while (cur != NULL){
+   196673:  188:			cur->readAddr = 0;
+   196673:  189:			cur->writeAddr = 0;
+   196673:  190:			cur = cur->next;
+        -:  191:		}
+        -:  192:	}
+       66:  193:}
+        -:  194:
+       66:  195:sFile* my_open(int fd){	
+        -:  196:	sFile* f;
+       66:  197:	FILE_NULL((f = malloc(sizeof(struct s_file))),
+        -:  198:			"malloc of file", NULL);
+        -:  199:
+       66:  200:	FILE_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
+        -:  201:			"malloc in file", f);
+        -:  202:	//f->mode = mode[0];
+       66:  203:	f->length = 0;
+       66:  204:	f->index = 0;
+       66:  205:	f->fd = fd;
+        -:  206:
+       66:  207:	return f;
+        -:  208:}
+        -:  209:
+134217952:  210:char my_getc(sFile* f){
+134217952:  211:	if(f->length == 0 || f->index >= f->length){
+   524382:  212:		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
+   524382:  213:		f->index = 0;
+   524382:  214:		if (f->length == -1)
+    #####:  215:			return -1;
+   524382:  216:		if (f->length == 0)
+       66:  217:			return EOF;
+        -:  218:	}
+134217886:  219:	return f->buffer[f->index++];
+        -:  220:}
+        -:  221:
+       66:  222:int my_close(sFile* f){
+       66:  223:	if (f == NULL)
+    #####:  224:		return -1;
+        -:  225:
+       66:  226:	free(f->buffer);
+       66:  227:	free(f);
+       66:  228:	return 0;
+        -:  229:}
+        -:  230:

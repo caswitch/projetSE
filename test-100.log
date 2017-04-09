@@ -1,0 +1,14 @@
++ DN=/dev/null
++ ./detecter
++ ./detecter -i1 -l 1 cat /dev/null
++ ./detecter -l1 -i 1 cat /dev/null
++ ./detecter -i 0 cat /dev/null
+Interval nul
++ ./detecter -i -1 cat /dev/null
+String to number conversion fail
++ ./detecter -l -1 cat /dev/null
+String to number conversion fail
++ ./detecter -i1 -l1
++ ./detecter -c -i1 -l1 cat /dev/null
++ ./detecter -t %S -c -i1 -l1 cat /dev/null
++ exit 0

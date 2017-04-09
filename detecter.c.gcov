@@ -1,0 +1,250 @@
+        -:    0:Source:src/detecter.c
+        -:    0:Programs:3
+        -:    1:#include <stdlib.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include <unistd.h>
+        -:    4:#include <stdbool.h>
+        -:    5:#include <string.h>
+        -:    6:#include <sys/time.h>
+        -:    7:#include <time.h>
+        -:    8:#include <wait.h>
+        -:    9:
+        -:   10:#include "buff_and_file.h"
+        -:   11:#include "assert.h"
+        -:   12:#include "detecter.h"
+        -:   13:
+        -:   14:#define BUFFT_SIZE 256
+        -:   15:#define CONVERT_USEC 1000
+        -:   16:#define NUMBER_OF_STRINGS 42
+        -:   17:#define STRING_LENGTH 2
+        -:   18:#define ZERO_TERMINATOR 1
+        -:   19:
+        -:   20:// Converts a string to an int and errors out if not possible
+       35:   21:int safe_atoi(char const* str){
+        -:   22:	// If a user enters "test", 
+        -:   23:	// I don't want atoi to say "test" means 0. I want an error.
+        -:   24:
+       70:   25:	for (unsigned int i = 0; i < strlen(str); ++i)
+       39:   26:		if (str[i] < '0' || str[i] > '9')
+        4:   27:			grumble("String to number conversion fail");
+        -:   28:
+       31:   29:	return atoi(str);
+        -:   30:}
+        -:   31:
+        -:   32:// Prints a nice reminder of how to use the program
+        8:   33:void usage(char * const command) {
+        8:   34:	printf("Usage: %s [-t format] [-i range] "
+        -:   35:		   "[-l limit] [-c] prog arg ... arg\n\n", command);
+        -:   36:
+        8:   37:	printf("Periodically executes a program and detects changes "
+        -:   38:		   "in its output.\n\n");
+        -:   39:
+        8:   40:	printf("Options:\n"
+        -:   41:		   "  -i   Specify time interval (in milliseconds) between each call "
+        -:   42:		   "(default value: 10,000 ms)\n"
+        -:   43:		   "  -l   Specify the number of calls (default value: 0, no limit)\n"
+        -:   44:		   "  -c   Detects changes in the return value too (default value: 0)\n"
+        -:   45:		   "  -t   Causes the date and time of each launch to be displayed, "
+        -:   46:		   "with the format specified, compatible with the strftime library "
+        -:   47:		   "function (default: no display)\n"
+        -:   48:		   "\tExample: %s -t '%%H:%%M:%%S'\n"
+        -:   49:		   "  -h   Display this help and exit\n", command);
+        -:   50:
+        8:   51:	exit(EXIT_FAILURE);
+        -:   52:}
+        -:   53:
+       66:   54:bool output_delta(int fd, Buffer* cache){
+       66:   55:	char new = '_';
+       66:   56:	char old = '_';
+        -:   57:	//unsigned int i;
+       66:   58:	bool retvalue = false;
+        -:   59:
+       66:   60:	sFile* f = my_open(fd);
+       66:   61:	if (f == NULL)
+    #####:   62:		grumble("output_delta malloc");
+        -:   63:
+       66:   64:	buff_reset(cache);
+        -:   65:
+134218084:   66:	while (new != EOF){
+        -:   67:		// Compare last output with what comes out of fd
+        -:   68:		// As we compare, we replace buff[i] with fd[i]
+134217952:   69:		new = my_getc(f);
+134217952:   70:		old = buff_getc(cache);
+134217952:   71:		if (old != new){
+ 83886281:   72:			retvalue = true;
+        -:   73:		}
+        -:   74:		
+134217952:   75:		assert(buff_putc(cache, new), "buff_putc");
+        -:   76:	}
+       66:   77:	buff_unputc(cache);
+       66:   78:	my_close(f);
+        -:   79:	
+       66:   80:	if (retvalue){
+       56:   81:		return true;
+        -:   82:	}
+        -:   83:	else {
+       10:   84:		return false;
+        -:   85:	}
+        -:   86:}
+        -:   87:
+       12:   88:void print_time(char *format){
+        -:   89:	char buffer[BUFFT_SIZE];
+        -:   90:	struct timeval tv;
+        -:   91:	struct timezone tz;
+        -:   92:	struct tm *info;
+        -:   93:
+       12:   94:	assert(gettimeofday(&tv, &tz), "gettimofday");
+       12:   95:	info = localtime(&tv.tv_sec);
+        -:   96:
+       12:   97:	if (info == NULL)
+    #####:   98:		grumble("localtime");
+        -:   99:
+       12:  100:	strftime(buffer, BUFFT_SIZE, format, info);
+        -:  101:
+       12:  102:	printf("%s\n", buffer);
+       12:  103:}
+        -:  104:
+       66:  105:int callProgram(char const *prog, char *const args[]){
+        -:  106:	int tube[2];
+        -:  107:	
+       66:  108:	assert(pipe(tube), "callProgram pipe");
+        -:  109:	
+       66:  110:	switch(fork()){
+        -:  111:		case 0:
+        -:  112:			//Case enfant
+       66:  113:			assert(close(tube[0]), "callProgram child close tube[0]");
+        -:  114:
+       66:  115:			assert(dup2(tube[1], 1), 
+        -:  116:				"callProgram child redirect stdout > tube[1]");
+        -:  117:
+       66:  118:			execvp(prog, args);
+       66:  119:			assert(kill(getpid(), SIGUSR1), "kill failure child");
+        -:  120:		case -1:
+        -:  121:			//Case erreur
+    #####:  122:			grumble("callProgram fork");
+        -:  123:		default:
+        -:  124:			//Case parent
+       66:  125:			assert(close(tube[1]), "callProgram father close tube[1]");
+        -:  126:
+       66:  127:			return tube[0];
+        -:  128:	}
+        -:  129:}
+        -:  130:
+       66:  131:void exit_code(bool verbose){
+        -:  132:	int wstatus;
+        -:  133:	static int status = -1;
+        -:  134:	
+       66:  135:	assert(wait(&wstatus), "wait");
+        -:  136:
+       66:  137:	if (!WIFEXITED(wstatus))
+        2:  138:		grumble("callProgram execvp");
+        -:  139:
+       64:  140:	if (verbose)
+       13:  141:		if (status != WEXITSTATUS(wstatus)) {
+       13:  142:			status = WEXITSTATUS(wstatus);
+       13:  143:			printf("exit %d\n", status);
+        -:  144:		}
+        -:  145:
+       64:  146:	fflush (stdout);
+       64:  147:}
+        -:  148:
+       14:  149:void interval(char const *prog, char *const args[], int opt_i, 
+        -:  150:			  int opt_l, bool opt_c, bool opt_t, char* format){
+       14:  151:	int i = 0;
+       14:  152:	Buffer* output = NULL;
+        -:  153:	int fd;
+       14:  154:	int limite = (opt_l != 0);
+        -:  155:
+        -:  156:	//TODO
+       14:  157:	output = buff_new(output);
+        -:  158:
+       92:  159:	while (!limite || i < opt_l){
+       66:  160:		if (opt_t)
+       12:  161:			print_time(format);
+        -:  162:
+       66:  163:		fd = callProgram(prog, args);
+        -:  164:
+       66:  165:		if (output_delta(fd, output))
+       56:  166:			if (buff_print(output) == -1){
+    #####:  167:				buff_free(output);
+    #####:  168:				grumble("interval write to stdout fail");
+        -:  169:			}
+        -:  170:
+       66:  171:		exit_code(opt_c);
+        -:  172:
+       64:  173:		assert(close(fd), "close fd");
+        -:  174:		
+       64:  175:		i++;
+       64:  176:		assert(usleep(opt_i* CONVERT_USEC), "usleep");
+        -:  177:	}
+       12:  178:	buff_free(output);
+       12:  179:}
+        -:  180:
+        4:  181:void check_format (const char * optarg, char * const command) {
+        4:  182:	char format_spec [NUMBER_OF_STRINGS][STRING_LENGTH + ZERO_TERMINATOR] = {
+        -:  183:		"%a","%A","%b","%B","%c","%C","%d","%D","%e","%E","%F","%G","%g",
+        -:  184:		"%h","%H","%I","%j","%k","%l","%m","%M","%n","%O","%p","%P","%r",
+        -:  185:		"%R","%s","%S","%t","%T","%u","%U","%V","%w","%W","%x","%X","%y",
+        -:  186:		"%Y","%Z","%+"};
+        -:  187:
+       97:  188:	for (int i = 0; i < 42; i++) {
+       96:  189:		if (strstr(optarg, format_spec[i]) != NULL)
+        6:  190:			return;
+        -:  191:	}
+        -:  192:	
+        1:  193:	printf ("Invalid format for -t option\n\n");
+        1:  194:	usage(command);
+        -:  195:}
+        -:  196:
+       27:  197:int main(int argc, char* const argv[]){
+        -:  198:	int option;
+        -:  199:	// Globals
+       27:  200:	bool opt_t = false; // Time is not printed
+       27:  201:	int opt_i = 10000;
+       27:  202:	int opt_l = 0;
+       27:  203:	bool opt_c = false;
+       27:  204:	char* format = NULL;
+       27:  205:	char* prog_name = argv[0];
+        -:  206://	char format_spec [43][2 + 1];
+        -:  207:
+       92:  208:	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
+       49:  209:		switch(option){
+        -:  210:			case 't':
+        4:  211:				check_format(optarg, prog_name);
+        3:  212:				opt_t = true;
+        3:  213:				format = optarg;
+        3:  214:				break;
+        -:  215:			case 'i':
+       18:  216:				opt_i = safe_atoi(optarg);
+       16:  217:				if (opt_i <= 0)
+        1:  218:					grumble("Interval nul");
+       15:  219:				break;
+        -:  220:			case 'l':
+       17:  221:				opt_l = safe_atoi(optarg);
+       15:  222:				break;
+        -:  223:			case 'c':
+        5:  224:				opt_c = true;
+        5:  225:				break;
+        -:  226:			case 'h':
+        1:  227:				usage(prog_name);
+        -:  228:			case '?':
+        1:  229:				fprintf(stderr, "Unknown option: %c\n\n", optopt);
+        1:  230:				usage(prog_name);
+        -:  231:			case ':':
+        3:  232:				fprintf(stderr, "Option -%c takes an argument\n", optopt);
+        3:  233:				usage(prog_name);
+        -:  234:			default :
+    #####:  235:				grumble("getopt");
+        -:  236:		}
+        -:  237:	}
+        -:  238:
+       16:  239:	argc -= optind;
+       16:  240:	argv += optind;
+        -:  241:
+       16:  242:	if (argc == 0)
+        2:  243:		usage(prog_name);
+        -:  244:
+       14:  245:	interval(argv[0], argv, opt_i, opt_l, opt_c, opt_t, format);
+        -:  246:
+       12:  247:	return EXIT_SUCCESS;
+        -:  248:}

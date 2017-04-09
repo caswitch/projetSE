@@ -41,6 +41,17 @@
 		}                                                  \
 	}
 
+#define FILE_NULL(alloc, msg, f)                           \
+	if (alloc == NULL){                                    \
+		if (f == NULL){                                    \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+		else{                                              \
+			my_close(f);                                  \
+			GRUMBLE(msg);                                  \
+		}                                                  \
+	}
+
 #define PTR_NULL(ptr, val)                                 \
 	if (ptr == NULL){                                      \
 		return val;                                        \
@@ -71,9 +82,11 @@ void buff_free(Buffer* b){
 
 node* node_new(){
 	node* n;
-	NODE_NULL((n = malloc(sizeof(struct s_node))), "malloc of node", NULL);
+	NODE_NULL((n = malloc(sizeof(struct s_node))),
+			"malloc of node", NULL);
 
-	NODE_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)), "malloc in node", n)
+	NODE_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
+			"malloc in node", n)
 
 	n->size = BUFF_SIZE;
 	n->prec = NULL;
@@ -86,7 +99,8 @@ node* node_new(){
 
 Buffer* buff_new(){
 	Buffer* b;
-	BUFF_NULL((b = malloc(sizeof(struct s_buff))), "malloc of buffer", NULL);
+	BUFF_NULL((b = malloc(sizeof(struct s_buff))),
+			"malloc of buffer", NULL);
 
 	b->readNode = node_new();
 	b->writeNode = b->readNode;
@@ -179,12 +193,12 @@ void buff_reset(Buffer* b){
 }
 
 sFile* my_open(int fd){	
-	sFile* f = malloc(sizeof(struct s_file));
+	sFile* f;
+	FILE_NULL((f = malloc(sizeof(struct s_file))),
+			"malloc of file", NULL);
 
-	if (f == NULL)
-		return NULL;
-
-	f->buffer = malloc(BUFFER_SIZE * sizeof(char));
+	FILE_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
+			"malloc in file", f);
 	//f->mode = mode[0];
 	f->length = 0;
 	f->index = 0;
