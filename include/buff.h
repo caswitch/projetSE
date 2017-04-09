@@ -36,7 +36,6 @@ typedef struct s_node {
  * It is by default a linked list of characters 
  */
 typedef struct s_buff{
-	unsigned int length;	/*!< Total length of the buffer */
 	node* start;			/*!< First node of the chain */
 	node* readNode;			/*!< Node to read from */
 	node* writeNode;		/*!< Node to write to */

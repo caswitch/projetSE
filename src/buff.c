@@ -2,9 +2,34 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include "buff.h"
 #include "assert.h"
+
+#define EXIT_FAIL -1
+
+// Small 'if' to avoid the "Error: Success" problem
+#define GRUMBLE(msg)                                       \
+	if (errno){                                            \
+		perror(msg);                                       \
+	}                                                      \
+	else{                                                  \
+		fprintf(stderr, "%s\n", msg);                      \
+	}                                                      \
+	exit(EXIT_FAILURE);
+
+#define NODE_NULL(alloc, msg, n)                           \
+	if (alloc == NULL){                                    \
+		if (n == NULL){                                    \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+		else{                                              \
+			free(n);                                       \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+	}
+
 
 void buff_free(Buffer* b){
 	if (b == NULL)
@@ -25,15 +50,10 @@ void buff_free(Buffer* b){
 }
 
 node* node_new(){
-	node* n = malloc(sizeof(struct s_node));
+	node* n;
+	NODE_NULL((n = malloc(sizeof(struct s_node))), "malloc of node", NULL);
 
-	if (n == NULL)
-		grumble ("malloc node");
-
-	n->mem = malloc(sizeof(s) * BUFF_SIZE);
-
-	if (n == NULL)
-		grumble ("malloc array in node");
+	NODE_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)), "malloc in node", n)
 
 	n->size = BUFF_SIZE;
 	n->prec = NULL;
@@ -46,7 +66,6 @@ node* node_new(){
 Buffer* buff_new(){
 	Buffer* b = malloc(sizeof(struct s_buff));
 
-	b->length = 0;
 	b->readNode = node_new();
 	b->writeNode = b->readNode;
 	b->start = b->readNode;
@@ -56,10 +75,10 @@ Buffer* buff_new(){
 
 int buff_putc(Buffer* b, char c){
 	if (b == NULL)
-		return -1;
+		return EXIT_FAIL;
 
 	if (b->writeNode == NULL)
-		return -1;
+				return EXIT_FAIL;
 
 	// If there's no more room in the node,
 	if (b->writeNode->writeAddr >= b->writeNode->size){
@@ -74,31 +93,22 @@ int buff_putc(Buffer* b, char c){
 	}
 
 	b->writeNode->mem[b->writeNode->writeAddr++] = c;
-	b->length++;
-	return 0;
+	return EXIT_SUCCESS;
 }
-
-/*
-int buff_getSize(Buffer* b){
-	if (b == NULL)
-		return 0;
-	return b->length;
-}
-*/
 
 int buff_print(Buffer* b){
 	if (b == NULL)
-		return -1;
+		return EXIT_FAIL;
 
 	// Visit each node of the list from the beginning and write it
 	node* cur = b->start;
 	while (cur != NULL){
-		if (write(1, cur->mem, cur->writeAddr) == -1)
-			return -1;
+		if (write(1, cur->mem, cur->writeAddr) == EXIT_FAIL)
+			return EXIT_FAIL;
 		cur = cur->next;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 char buff_getc(Buffer* b){
@@ -146,7 +156,6 @@ void buff_reset(Buffer* b){
 	if (b == NULL)
 		return;
 
-	b->length = 0;
 	b->readNode = b->start;
 	b->writeNode = b->start;
 

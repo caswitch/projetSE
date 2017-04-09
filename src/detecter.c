@@ -65,7 +65,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		buff_putc(cache, new);
+		assert(buff_putc(cache, new), "buff_putc");
 	}
 	buff_unputc(cache);
 	my_close(f);
@@ -185,8 +185,6 @@ void check_format (const char * optarg, char * const command) {
 	
 	printf ("Invalid format for -t option\n\n");
 	usage(command);
-
-	exit (EXIT_FAILURE);
 }
 
 int main(int argc, char* const argv[]){
@@ -220,18 +218,14 @@ int main(int argc, char* const argv[]){
 				break;
 			case 'h':
 				usage(prog_name);
-				break;
 			case '?':
 				fprintf(stderr, "Unknown option: %c\n\n", optopt);
 				usage(prog_name);
-				break;
 			case ':':
 				fprintf(stderr, "Option -%c takes an argument\n", optopt);
 				usage(prog_name);
-				break;
 			default :
 				grumble("getopt");
-				break;
 		}
 	}
 

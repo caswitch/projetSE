@@ -1,0 +1,63 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BUFFER_SIZE	include/file.h	8;"	d
+BUFFT_SIZE	include/detecter.h	30;"	d
+BUFF_SIZE	include/buff.h	9;"	d
+Buffer	include/buff.h	/^} Buffer;$/;"	t	typeref:struct:s_buff
+CONVERT_USEC	include/detecter.h	31;"	d
+EXIT_FAIL	src/buff.c	10;"	d	file:
+GRUMBLE	src/buff.c	13;"	d	file:
+NODE_NULL	src/buff.c	22;"	d	file:
+NUMBER_OF_STRINGS	include/detecter.h	32;"	d
+STRING_LENGTH	include/detecter.h	33;"	d
+WRITE	include/buff.h	10;"	d
+ZERO_TERMINATOR	include/detecter.h	34;"	d
+__ASSERT__H_	include/assert.h	7;"	d
+__BUFF__H_	include/buff.h	7;"	d
+__DETECTER__H_	include/detecter.h	28;"	d
+__FILE__H_	include/file.h	7;"	d
+assert	src/assert.c	/^void assert(int return_value, char* msg){$/;"	f
+buff_free	src/buff.c	/^void buff_free(Buffer* b){$/;"	f
+buff_getc	src/buff.c	/^char buff_getc(Buffer* b){$/;"	f
+buff_new	src/buff.c	/^Buffer* buff_new(){$/;"	f
+buff_print	src/buff.c	/^int buff_print(Buffer* b){$/;"	f
+buff_putc	src/buff.c	/^int buff_putc(Buffer* b, char c){$/;"	f
+buff_reset	src/buff.c	/^void buff_reset(Buffer* b){$/;"	f
+buff_unputc	src/buff.c	/^char buff_unputc(Buffer* b){$/;"	f
+buffer	include/file.h	/^	char* buffer;	\/*!< An array *\/$/;"	m	struct:s_file
+callProgram	src/detecter.c	/^int callProgram(char const *prog, char *const args[]){$/;"	f
+check_format	src/detecter.c	/^void check_format (const char * optarg, char * const command) {$/;"	f
+exit_code	src/detecter.c	/^void exit_code(int i, bool opt_c){$/;"	f
+fd	include/file.h	/^	int fd;			\/*!< File descriptor *\/$/;"	m	struct:s_file
+grumble	src/assert.c	/^void grumble(char* msg){$/;"	f
+index	include/file.h	/^	int index;		\/*!< Index of the character that will be read by getc *\/$/;"	m	struct:s_file
+interval	src/detecter.c	/^void interval(char const *prog, char *const args[], int opt_i, $/;"	f
+length	include/file.h	/^	int length;		\/*!< Length of the buffer *\/$/;"	m	struct:s_file
+main	src/detecter.c	/^int main(int argc, char* const argv[]){$/;"	f
+mem	include/buff.h	/^	s* mem;					\/*!< The actual array *\/$/;"	m	struct:s_node
+my_close	src/file.c	/^int my_close(sFile* f){$/;"	f
+my_getc	src/file.c	/^char my_getc(sFile* f){$/;"	f
+my_open	src/file.c	/^sFile* my_open(int fd){	$/;"	f
+next	include/buff.h	/^	struct s_node* next;	\/*!< Pointer to the next node *\/$/;"	m	struct:s_node	typeref:struct:s_node::s_node
+node	include/buff.h	/^} node;$/;"	t	typeref:struct:s_node
+node_new	src/buff.c	/^node* node_new(){$/;"	f
+output_delta	src/detecter.c	/^Buffer* output_delta(int fd, Buffer* cache){$/;"	f
+prec	include/buff.h	/^	struct s_node* prec;	\/*!< Pointer to the last node *\/$/;"	m	struct:s_node	typeref:struct:s_node::s_node
+print_time	src/detecter.c	/^void print_time(char *format){$/;"	f
+readAddr	include/buff.h	/^	unsigned int readAddr;	\/*!< Index of the element that will be read $/;"	m	struct:s_node
+readNode	include/buff.h	/^	node* readNode;			\/*!< Node to read from *\/$/;"	m	struct:s_buff
+s	include/buff.h	/^typedef char s;$/;"	t
+sFile	include/file.h	/^} sFile;$/;"	t	typeref:struct:s_file
+s_buff	include/buff.h	/^typedef struct s_buff{$/;"	s
+s_file	include/file.h	/^typedef struct s_file {$/;"	s
+s_node	include/buff.h	/^typedef struct s_node {$/;"	s
+safe_atoi	src/detecter.c	/^int safe_atoi(char const* str){$/;"	f
+size	include/buff.h	/^	unsigned int size;		\/*!< Capacity of the node. Should be BUFF_SIZE *\/$/;"	m	struct:s_node
+start	include/buff.h	/^	node* start;			\/*!< First node of the chain *\/$/;"	m	struct:s_buff
+usage	src/detecter.c	/^void usage(char * const command) {$/;"	f
+writeAddr	include/buff.h	/^	unsigned int writeAddr;	\/*!< Index in which putc will write *\/$/;"	m	struct:s_node
+writeNode	include/buff.h	/^	node* writeNode;		\/*!< Node to write to *\/$/;"	m	struct:s_buff
