@@ -94,15 +94,18 @@
 
 
 void buff_free(Buffer* b){
-	if (b != NULL){
+	if (b != NULL && b->start != NULL){
+		
 		node* cur = b->start;
-		while (cur != NULL){
+		while (cur->next != NULL){
+			if (cur->prec)
+				free(cur->prec);
+
 			free(cur->mem);
 			cur = cur->next;
-			//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
-			if (cur)
-				free(cur->prec);
 		}
+		free(cur->prec);
+		free(cur->mem);
 		free(cur);
 		free(b);
 	}

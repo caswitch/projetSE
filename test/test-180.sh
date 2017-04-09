@@ -45,7 +45,13 @@ DN=/dev/null
 
 ./detecter -l1 -i1 -c toto $DN && fail "cmd inconnue"
 
-# test la détection d'un changement dans un fichier
+# Test: on limite le nombre de file descriptors à 4, car la libc en utilise déjà 3
+# Et on essaye de voir si le programme marche toujours 
+# (au cas ou on oublie de vérifier pleins de primitives système)
+
+(ulimit -n 4; ./detecter -l 1 -i 1 ls -l)    && fail "le programme a fonctionne sans pouvoir ouvrir de tube"
+
+# Test de la détection d'un changement dans un fichier
 
 echo 'toto' > ./toto.tmp
 toto=$(./detecter -i1 -l2 'cat' 'toto.tmp' | grep -c 'toto')
