@@ -65,7 +65,7 @@ Buffer* output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		assert(buff_putc(cache, new), "buff_putc");
+		buff_putc(cache, new);//, "buff_putc");
 	}
 	buff_unputc(cache);
 	my_close(f);

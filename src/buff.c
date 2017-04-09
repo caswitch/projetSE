@@ -30,6 +30,18 @@
 		}                                                  \
 	}
 
+#define BUFF_NULL(alloc, msg, b)                           \
+	if (alloc == NULL){                                    \
+		if (b == NULL){                                    \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+		else{                                              \
+			buff_free(b);                                  \
+			GRUMBLE(msg);                                  \
+		}                                                  \
+	}
+
+
 
 void buff_free(Buffer* b){
 	if (b == NULL)
@@ -64,7 +76,8 @@ node* node_new(){
 }
 
 Buffer* buff_new(){
-	Buffer* b = malloc(sizeof(struct s_buff));
+	Buffer* b;
+	BUFF_NULL((b = malloc(sizeof(struct s_buff))), "malloc of buffer", NULL);
 
 	b->readNode = node_new();
 	b->writeNode = b->readNode;
