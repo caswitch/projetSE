@@ -30,9 +30,9 @@
 		}                                                  \
 	}
 
-#define CHECK_VAL(a, val, OPERATION)                                 \
+#define CHECK_VAL(a, val, OPERATION)                       \
 	if (a == val){                                         \
-		OPERATION;                                        \
+		OPERATION;                                         \
 	}
 
 
@@ -142,13 +142,23 @@ s buff_unputc(Buffer* b){
 
 	// If we're at the start of our node
 	if (b->writeNode->writeAddr == 0){
-		// We pick the last one and call ourselves again
-		b->writeNode = b->writeNode->prec;
-		return buff_unputc(b);
-	}
+		return EOF;
+	/*
+		// This is correct because of buff_putc's behaviour
+		// 
+		// Indeed, writeAddr will never be 0 unless we're at the absolute
+		// start of the buffer. It skips 0. It goes from 255 to 256, which
+		// is out of bounds, detects that 256 is out of bounds, changes node,
+		// then writes at 0 in the next and sets writeAddr to 1.
+		// So, a mere --writeAddr is always enough !
 
-	//printf("%d/%d\n", b->writeNode->writeAddr, b->writeNode->size);
-	return b->writeNode->mem[b->writeNode->writeAddr--];
+		if (b->writeNode->prec){
+			b->writeNode = b->writeNode->prec;
+			return buff_unputc(b);
+		}
+	//*/
+	}
+	return b->writeNode->mem[--b->writeNode->writeAddr];
 }
 
 void buff_reset(Buffer* b){
