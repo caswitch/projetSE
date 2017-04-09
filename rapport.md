@@ -1,9 +1,7 @@
 # Table des matières
 
 
-# Introduction
-
-### Sujet
+## Sujet
 
 L'objectif de ce projet était de créer une commande ```detecter``` permettant de lancer périodiquement un programme et de détecter les changements dans sa sortie standard en respectant scrupuleusement une spécification.
 
@@ -11,7 +9,7 @@ L'objectif de ce projet était de créer une commande ```detecter``` permettant 
 detecter [-t format][-i intervalle][-l limite][-c] prog arg1 arg2 ... argn
 ```
 
-### Difficultés
+## Difficultés
 
 Le projet a amené son lot de difficultés auxquelles nous nous attendions,
 
@@ -20,17 +18,14 @@ Le projet a amené son lot de difficultés auxquelles nous nous attendions,
 
 Et quelques unes plus spécifiques
 
-* Comment diviser le problème en sous-problème et les articuler ensemble pour avoir un programme fonctionnel ?
 * Comment comparer les sorties entre les différents appels du programme passé en argument ? 
 * Comment allons-nous nous débrouiller pour stocker en mémoire ces sorties dont nous ne connaissons pas la taille finale avant d'avoir reçu leur EOF ?
-* Comment utiliser les informations liées à la couverture de code et comment augmenter cette couverture ?
-* Comment trouver un jeu de tests pertinent pour couvrir le code et tester son bon fonctionnement ?
+* Apprendre et utiliser les informations liées à la couverture de code.
+* Passer et créer des jeux de tests pour le programme.
 
 Pour répondre à ces problèmes, nous avons fait quelques choix. 
 
-# Corps
-
-### Spécificités de notre implémentation
+## Spécificités de notre implémentation
 
 #### Documentation
 
@@ -80,9 +75,6 @@ Nous avons mis nos jeux de tests additionnels dans test-180.sh
 Nous testons plusieurs choses,
 
 - Quelques petites choses sur les arguments du programme
-  - L'ordre des options a-t-il une importance ? (Non)
-  - La présence ou non de toutes les options a-t-elle une importance ? (NON)
-    - Dans certains cas précis, par exemple, ```./detecter -l1 -i1 toto $DN ``` renvoyait EXIT_SUCCESS alors que `` `./detecter -l1 -i1 -c toto $DN``` renvoyait EXIT_FAILURE. Ceci s'expliquait car le processus fils ne signalait pas au père que la commande donnée en argument de execvp était invalide à moins d'avoir l'option -c spécifier. Créer des jeux de tests nous a donc permis de voir des faiblesses d'implémentation et de les corriger.
   - Les options sont-elles valides ?
   - Les arguments des options sont-ils valides ?
   - getopt comprend-il les syntaxes qu'il devrait comprendre ?
@@ -91,13 +83,33 @@ Nous testons plusieurs choses,
 - Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.
 
 
-Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO.
- * GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme.
- * ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE
- * ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une MACRO)
- * CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO)
- * CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)
+## Architecture du programme
 
-Nous avons intentionnellement gardé plusieurs MACRO qui ont un comportement similaire dans un soucis de lisibilité du code.
+Notre programme commence dans sa fonction main dans laquelle il: 
 
+* Initialise ses options (symbolisées par des variables opt_X) à leurs valeurs par défaut
+* Analyse les arguments entrés par l'utilisateur et modifie ses options en conséquence
+* Potentiellement appelle la fonction usage() si les arguments sont mauvais
+* Appelle le coeur du programme, la fonction ```interval()```
 
+[Voir ```Main```]()
+
+L'allocation du [```buffer```](doc/html/structs__buff.html) qui durera pendant l'intégralité du programme se fait ici
+
+Cette fonction appelle N fois le programme X avec les arguments Y toutes les K millisecondes. 
+
+[Voir ```interval()```](doc/html/detecter_8h.html#aa4efd77ab6ae544b8985d542daa63a2f)
+
+L'exécution du programme se fait via la fonction callProgram se chargeant d'appeler le programme passé en argument avec ses arguments et qui renvoie un tube vers lequel est redirigé la sortie standard du dit programme.
+
+[Voir ```callProgram()```](doc/html/detecter_8h.html#a29aec1ddf28d146551c18cce81ed5399)
+
+Ce file descriptor est ensuite passé à la fonction output_delta(), ainsi que le buffer, qui saura nous dire si les données sorties par le programme diffèrent de celles présentes dans le buffer.
+
+Si c'est le cas, la fonction buff_print() se charge d'afficher les données.
+
+[```Voir buff_print()```](doc/html/buff__and__file_8h.html#a8a6915be4ebc290760baff3bc2378b00) 
+
+Dans tous les cas, nous attendons ensuite l'extinction du programme fils invoqué par callProgram() avec la fonction exit_code().
+
+[```Voir exit_code()```](doc/html/detecter_8c.html#aa07b951f949b7b01251f236dd4d62405)
