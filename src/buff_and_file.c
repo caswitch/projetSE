@@ -30,14 +30,9 @@
 		}                                                  \
 	}
 
-#define PTR_NULL(ptr, val)                                 \
-	if (ptr == NULL){                                      \
-		return val;                                        \
-	}
-
-#define CHECK_VAL(a, val, ret)                                 \
+#define CHECK_VAL(a, val, OPERATION)                                 \
 	if (a == val){                                         \
-		return ret;                                        \
+		OPERATION;                                        \
 	}
 
 
@@ -88,8 +83,8 @@ Buffer* buff_new(){
 }
 
 int buff_putc(Buffer* b, char c){
-	PTR_NULL(b, EXIT_FAIL)
-	PTR_NULL(b->writeNode, EXIT_FAIL)
+	CHECK_VAL(b, NULL, return EXIT_FAIL)
+	CHECK_VAL(b->writeNode, NULL, return EXIT_FAIL)
 
 	// If there's no more room in the node,
 	if (b->writeNode->writeAddr >= b->writeNode->size){
@@ -108,13 +103,13 @@ int buff_putc(Buffer* b, char c){
 }
 
 int buff_print(Buffer* b){
-	PTR_NULL(b, EXIT_FAIL) 
+	CHECK_VAL(b, NULL, return EXIT_FAIL) 
 
 	// Visit each node of the list from the beginning and write it
 	node* cur = b->start;
 	while (cur != NULL){
 		CHECK_VAL(write(1, cur->mem, cur->writeAddr),
-				EXIT_FAIL, EXIT_FAIL)
+				EXIT_FAIL, return EXIT_FAIL)
 		cur = cur->next;
 	}
 
@@ -122,8 +117,8 @@ int buff_print(Buffer* b){
 }
 
 s buff_getc(Buffer* b){
-	PTR_NULL(b, EOF)
-	PTR_NULL(b->readNode, EOF)
+	CHECK_VAL(b, NULL, return EOF)
+	CHECK_VAL(b->readNode, NULL, return EOF)
 
 	// If we're at the end of our node
 	if (b->readNode->readAddr >= b->readNode->size){
@@ -142,8 +137,8 @@ s buff_getc(Buffer* b){
 }
 
 s buff_unputc(Buffer* b){
-	PTR_NULL(b, EOF)
-	PTR_NULL(b->writeNode, EOF)
+	CHECK_VAL(b, NULL, return EOF)
+	CHECK_VAL(b->writeNode, NULL, return EOF)
 
 	// If we're at the start of our node
 	if (b->writeNode->writeAddr == 0){
@@ -190,14 +185,14 @@ char my_getc(sFile* f){
 	if(f->length == 0 || f->index >= f->length){
 		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
 		f->index = 0;
-		CHECK_VAL(f->length, EXIT_FAIL, EXIT_FAIL);
-		CHECK_VAL(f->length, 0, EOF);
+		CHECK_VAL(f->length, EXIT_FAIL, return EXIT_FAIL);
+		CHECK_VAL(f->length, 0, return EOF);
 	}
 	return f->buffer[f->index++];
 }
 
 int my_close(sFile* f){
-	PTR_NULL(f, EXIT_FAIL)
+	CHECK_VAL(f, NULL, return EXIT_FAIL)
 
 	free(f->buffer);
 	free(f);
