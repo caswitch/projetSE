@@ -7,8 +7,7 @@
 #include <time.h>
 #include <wait.h>
 
-#include "file.h"
-#include "buff.h"
+#include "buff_and_file.h"
 #include "assert.h"
 #include "detecter.h"
 
@@ -73,9 +72,7 @@ bool output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		if (buff_putc(cache, new) == -1){
-			//todo
-		}
+		assert(buff_putc(cache, new), "buff_putc");
 	}
 	buff_unputc(cache);
 	my_close(f);
@@ -131,17 +128,17 @@ int callProgram(char const *prog, char *const args[]){
 	}
 }
 
-void exit_code(int i, bool opt_c){
+void exit_code(bool verbose){
 	int wstatus;
-	static int status = 0;
+	static int status = -1;
 	
 	assert(wait(&wstatus), "wait");
 
 	if (!WIFEXITED(wstatus))
 		grumble("callProgram execvp");
 
-	if (opt_c)
-		if (i == 0 || status != WEXITSTATUS(wstatus)) {
+	if (verbose)
+		if (status != WEXITSTATUS(wstatus)) {
 			status = WEXITSTATUS(wstatus);
 			printf("exit %d\n", status);
 		}
@@ -156,6 +153,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 	int fd;
 	int limite = (opt_l != 0);
 
+	//TODO
 	output = buff_new(output);
 
 	while (!limite || i < opt_l){
@@ -170,7 +168,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 				grumble("interval write to stdout fail");
 			}
 
-		exit_code(i, opt_c);
+		exit_code(opt_c);
 
 		assert(close(fd), "close fd");
 		

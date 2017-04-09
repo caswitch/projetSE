@@ -100,7 +100,7 @@ int callProgram(char const *prog, char *const args[]);
  * @param i A wstatus as given by wait()
  * @param opt_c Sensitive to changes in the exit code
  */
-void exit_code(int i, bool opt_c);
+void exit_code(bool opt_c);
 
 /**
  * @brief Executes a program periodically
