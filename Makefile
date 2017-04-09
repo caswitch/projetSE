@@ -75,7 +75,7 @@ test: test-sans-valgrind
 test-sans-valgrind: all
 	@for i in test/test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
 
-.PHONY: test_avec-valgrind
+.PHONY: test-avec-valgrind
 test-avec-valgrind: all
 	VALGRIND="valgrind -q"
 	export VALGRIND
