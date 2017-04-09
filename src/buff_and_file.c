@@ -141,8 +141,8 @@ s buff_unputc(Buffer* b){
 	CHECK_VAL(b->writeNode, NULL, return EOF)
 
 	// If we're at the start of our node
-	if (b->writeNode->writeAddr == 0){
-		return EOF;
+	CHECK_VAL(b->writeNode->writeAddr, 0, return EOF)
+
 	/*
 		// This is correct because of buff_putc's behaviour
 		// 
@@ -157,7 +157,7 @@ s buff_unputc(Buffer* b){
 			return buff_unputc(b);
 		}
 	//*/
-	}
+
 	return b->writeNode->mem[--b->writeNode->writeAddr];
 }
 
@@ -182,7 +182,7 @@ sFile* my_open(int fd){
 			"malloc of file", NULL, my_close(NULL))
 
 	ALLOC_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
-			"malloc in file", f, my_close(NULL))
+			"malloc in file", f, my_close(f))
 	//f->mode = mode[0];
 	f->length = 0;
 	f->index = 0;

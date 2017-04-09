@@ -11,11 +11,40 @@
 #include "assert.h"
 #include "detecter.h"
 
+#include <errno.h>
+
 #define BUFFT_SIZE 256
 #define CONVERT_USEC 1000
 #define NUMBER_OF_STRINGS 42
 #define STRING_LENGTH 2
 #define ZERO_TERMINATOR 1
+
+// Small 'if' to avoid the "Error: Success" problem
+#define GRUMBLE(msg)                                       \
+	if (errno){                                            \
+		perror(msg);                                       \
+	}                                                      \
+	else{                                                  \
+		fprintf(stderr, "%s\n", msg);                      \
+	}                                                      \
+	exit(EXIT_FAILURE);
+
+#define ALLOC_NULL(alloc, msg, n, OPERATION)               \
+	if (alloc == NULL){                                    \
+		if (n == NULL){                                    \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+		else{                                              \
+			OPERATION;                                     \
+			GRUMBLE(msg)                                   \
+		}                                                  \
+	}
+
+#define CHECK_VAL(a, val, OPERATION)                       \
+	if (a == val){                                         \
+		OPERATION;                                         \
+	}
+
 
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str){
@@ -24,7 +53,7 @@ int safe_atoi(char const* str){
 
 	for (unsigned int i = 0; i < strlen(str); ++i)
 		if (str[i] < '0' || str[i] > '9')
-			grumble("String to number conversion fail");
+			GRUMBLE("String to number conversion fail");
 
 	return atoi(str);
 }
@@ -58,9 +87,11 @@ bool output_delta(int fd, Buffer* cache){
 	bool retvalue = false;
 
 	sFile* f = my_open(fd);
+	ALLOC_NULL(f, "output_delta malloc", NULL, my_close(NULL))
+		/* CHOU
 	if (f == NULL)
-		grumble("output_delta malloc");
-
+		GRUMBLE("output_delta malloc");
+*/
 	buff_reset(cache);
 
 	while (new != EOF){
@@ -94,9 +125,11 @@ void print_time(char *format){
 	assert(gettimeofday(&tv, &tz), "gettimofday");
 	info = localtime(&tv.tv_sec);
 
+	CHECK_VAL(info, NULL, GRUMBLE("localtime"))
+		/* CHOU
 	if (info == NULL)
-		grumble("localtime");
-
+		GRUMBLE("localtime");
+*/
 	strftime(buffer, BUFFT_SIZE, format, info);
 
 	printf("%s\n", buffer);
@@ -104,28 +137,26 @@ void print_time(char *format){
 
 int callProgram(char const *prog, char *const args[]){
 	int tube[2];
+	pid_t pid;
 	
 	assert(pipe(tube), "callProgram pipe");
-	
-	switch(fork()){
-		case 0:
-			//Case enfant
-			assert(close(tube[0]), "callProgram child close tube[0]");
+	pid = fork();
 
-			assert(dup2(tube[1], 1), 
-				"callProgram child redirect stdout > tube[1]");
+	CHECK_VAL(pid, -1, GRUMBLE("callProgram frork"))
+	if (pid == 0) { //Child
+		assert(close(tube[0]), "callProgram child close tube[0]");
 
-			execvp(prog, args);
-			assert(kill(getpid(), SIGUSR1), "kill failure child");
-		case -1:
-			//Case erreur
-			grumble("callProgram fork");
-		default:
-			//Case parent
-			assert(close(tube[1]), "callProgram father close tube[1]");
+		assert(dup2(tube[1], 1), 
+			"callProgram child redirect stdout > tube[1]");
 
-			return tube[0];
+		execvp(prog, args);
+		assert(kill(getpid(), SIGUSR1), "kill failure child");
 	}
+
+	//Parent
+	assert(close(tube[1]), "callProgram father close tube[1]");
+
+	return tube[0];
 }
 
 void exit_code(bool verbose){
@@ -135,7 +166,7 @@ void exit_code(bool verbose){
 	assert(wait(&wstatus), "wait");
 
 	if (!WIFEXITED(wstatus))
-		grumble("callProgram execvp");
+		GRUMBLE("callProgram execvp");
 
 	if (verbose)
 		if (status != WEXITSTATUS(wstatus)) {
@@ -153,7 +184,6 @@ void interval(char const *prog, char *const args[], int opt_i,
 	int fd;
 	int limite = (opt_l != 0);
 
-	//TODO
 	output = buff_new(output);
 
 	while (!limite || i < opt_l){
@@ -163,10 +193,13 @@ void interval(char const *prog, char *const args[], int opt_i,
 		fd = callProgram(prog, args);
 
 		if (output_delta(fd, output))
+			CHECK_VAL(buff_print(output), -1, buff_free(output); GRUMBLE("interval write to stdout fail"))
+				/* CHOU
 			if (buff_print(output) == -1){
 				buff_free(output);
-				grumble("interval write to stdout fail");
+				GRUMBLE("interval write to stdout fail");
 			}
+			*/
 
 		exit_code(opt_c);
 
@@ -215,7 +248,7 @@ int main(int argc, char* const argv[]){
 			case 'i':
 				opt_i = safe_atoi(optarg);
 				if (opt_i <= 0)
-					grumble("Interval nul");
+					GRUMBLE("Interval nul");
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
@@ -232,7 +265,7 @@ int main(int argc, char* const argv[]){
 				fprintf(stderr, "Option -%c takes an argument\n", optopt);
 				usage(prog_name);
 			default :
-				grumble("getopt");
+				GRUMBLE("getopt")
 		}
 	}
 
