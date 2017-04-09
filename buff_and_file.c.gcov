@@ -96,174 +96,177 @@
         -:   94:
         -:   95:
        13:   96:void buff_free(Buffer* b){
-       13:   97:	if (b != NULL){
-       13:   98:		node* cur = b->start;
-   327720:   99:		while (cur != NULL){
-   327694:  100:			free(cur->mem);
-   327694:  101:			cur = cur->next;
-        -:  102:			//printf("\n%p -> %p -> %p", cur->prec, cur, cur->next);
-   327694:  103:			if (cur)
-   327681:  104:				free(cur->prec);
-        -:  105:		}
-       13:  106:		free(cur);
-       13:  107:		free(b);
-        -:  108:	}
-        -:  109:
-       13:  110:	return;
-        -:  111:}
+       13:   97:	if (b != NULL && b->start != NULL){
+        -:   98:		
+       13:   99:		node* cur = b->start;
+   327707:  100:		while (cur->next != NULL){
+   327681:  101:			if (cur->prec)
+   327678:  102:				free(cur->prec);
+        -:  103:
+   327681:  104:			free(cur->mem);
+   327681:  105:			cur = cur->next;
+        -:  106:		}
+       13:  107:		free(cur->prec);
+       13:  108:		free(cur->mem);
+       13:  109:		free(cur);
+       13:  110:		free(b);
+        -:  111:	}
         -:  112:
-   327696:  113:node* node_new(){
-        -:  114:	node* n;
-   327696:  115:	ALLOC_NULL((n = malloc(sizeof(struct s_node))),
-        -:  116:			"malloc of node", NULL, free(NULL));
-        -:  117:
-   327696:  118:	ALLOC_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
-        -:  119:			"malloc in node", n, free(n))
+       13:  113:	return;
+        -:  114:}
+        -:  115:
+   327697:  116:node* node_new(){
+        -:  117:	node* n;
+   327697:  118:	ALLOC_NULL((n = malloc(sizeof(struct s_node))),
+        -:  119:			"malloc of node", NULL, free(NULL));
         -:  120:
-   327696:  121:	n->size = BUFF_SIZE;
-   327696:  122:	n->prec = NULL;
-   327696:  123:	n->next = NULL;
-   327696:  124:	n->readAddr = 0;
-   327696:  125:	n->writeAddr = 0;
-        -:  126:
-   327696:  127:	return n;
-        -:  128:}
+   327697:  121:	ALLOC_NULL((n->mem = malloc(sizeof(s) * BUFF_SIZE)),
+        -:  122:			"malloc in node", n, free(n))
+        -:  123:
+   327697:  124:	n->size = BUFF_SIZE;
+   327697:  125:	n->prec = NULL;
+   327697:  126:	n->next = NULL;
+   327697:  127:	n->readAddr = 0;
+   327697:  128:	n->writeAddr = 0;
         -:  129:
-       15:  130:Buffer* buff_new(){
-        -:  131:	Buffer* b;
-       15:  132:	ALLOC_NULL((b = malloc(sizeof(struct s_buff))),
-        -:  133:			"malloc of buffer", NULL, buff_free(NULL))
-        -:  134:
-       15:  135:	b->readNode = node_new();
-       15:  136:	b->writeNode = b->readNode;
-       15:  137:	b->start = b->readNode;
-        -:  138:
-       15:  139:	return b;
-        -:  140:}
+   327697:  130:	return n;
+        -:  131:}
+        -:  132:
+       16:  133:Buffer* buff_new(){
+        -:  134:	Buffer* b;
+       16:  135:	ALLOC_NULL((b = malloc(sizeof(struct s_buff))),
+        -:  136:			"malloc of buffer", NULL, buff_free(NULL))
+        -:  137:
+       16:  138:	b->readNode = node_new();
+       16:  139:	b->writeNode = b->readNode;
+       16:  140:	b->start = b->readNode;
         -:  141:
-134218209:  142:int buff_putc(Buffer* b, char c){
-134218209:  143:	CHECK_NULL(b, return EXIT_FAIL)
-134218209:  144:	CHECK_NULL(b->writeNode, return EXIT_FAIL)
-        -:  145:
-        -:  146:	// If there's no more room in the node,
-134218209:  147:	if (b->writeNode->writeAddr >= b->writeNode->size){
-        -:  148:		// Create a new node, link this node to it
-   524288:  149:		if (b->writeNode->next == NULL){
-   327681:  150:			b->writeNode->next = node_new();
-   327681:  151:			b->writeNode->next->prec = b->writeNode;
-        -:  152:		}
-        -:  153:		// Link the new node to the current
-        -:  154:		// Hop to the next node
-   524288:  155:		b->writeNode = b->writeNode->next;
-        -:  156:	}
-        -:  157:
-134218209:  158:	b->writeNode->mem[b->writeNode->writeAddr++] = c;
-134218209:  159:	return EXIT_SUCCESS;
-        -:  160:}
-        -:  161:
-       57:  162:int buff_print(Buffer* b){
-       57:  163:	CHECK_NULL(b, return EXIT_FAIL) 
+       16:  142:	return b;
+        -:  143:}
+        -:  144:
+134218209:  145:int buff_putc(Buffer* b, char c){
+134218209:  146:	CHECK_NULL(b, return EXIT_FAIL)
+134218209:  147:	CHECK_NULL(b->writeNode, return EXIT_FAIL)
+        -:  148:
+        -:  149:	// If there's no more room in the node,
+134218209:  150:	if (b->writeNode->writeAddr >= b->writeNode->size){
+        -:  151:		// Create a new node, link this node to it
+   524288:  152:		if (b->writeNode->next == NULL){
+   327681:  153:			b->writeNode->next = node_new();
+   327681:  154:			b->writeNode->next->prec = b->writeNode;
+        -:  155:		}
+        -:  156:		// Link the new node to the current
+        -:  157:		// Hop to the next node
+   524288:  158:		b->writeNode = b->writeNode->next;
+        -:  159:	}
+        -:  160:
+134218209:  161:	b->writeNode->mem[b->writeNode->writeAddr++] = c;
+134218209:  162:	return EXIT_SUCCESS;
+        -:  163:}
         -:  164:
-        -:  165:	// Visit each node of the list from the beginning and write it
-       57:  166:	node* cur = b->start;
-   524459:  167:	while (cur != NULL){
-   524345:  168:		ASSERT(write(1, cur->mem, cur->writeAddr), return EXIT_FAIL)
-   524345:  169:		cur = cur->next;
-        -:  170:	}
-        -:  171:
-       57:  172:	return EXIT_SUCCESS;
-        -:  173:}
+       57:  165:int buff_print(Buffer* b){
+       57:  166:	CHECK_NULL(b, return EXIT_FAIL) 
+        -:  167:
+        -:  168:	// Visit each node of the list from the beginning and write it
+       57:  169:	node* cur = b->start;
+   524459:  170:	while (cur != NULL){
+   524345:  171:		ASSERT(write(1, cur->mem, cur->writeAddr), return EXIT_FAIL)
+   524345:  172:		cur = cur->next;
+        -:  173:	}
         -:  174:
-134742477:  175:s buff_getc(Buffer* b){
-134742477:  176:	CHECK_NULL(b, return EOF)
-134742477:  177:	CHECK_NULL(b->readNode, return EOF)
-        -:  178:
-        -:  179:	// If we're at the end of our node
-134742477:  180:	if (b->readNode->readAddr >= b->readNode->size){
-        -:  181:		// And there is more
-   524288:  182:		if (b->readNode->next){
-        -:  183:			// We pick the next node and call ourselves again
-   524268:  184:			b->readNode = b->readNode->next;
-   524268:  185:			return buff_getc(b);
-        -:  186:		}
-        -:  187:		else {
-       20:  188:			return EOF;
+       57:  175:	return EXIT_SUCCESS;
+        -:  176:}
+        -:  177:
+134742477:  178:s buff_getc(Buffer* b){
+134742477:  179:	CHECK_NULL(b, return EOF)
+134742477:  180:	CHECK_NULL(b->readNode, return EOF)
+        -:  181:
+        -:  182:	// If we're at the end of our node
+134742477:  183:	if (b->readNode->readAddr >= b->readNode->size){
+        -:  184:		// And there is more
+   524288:  185:		if (b->readNode->next){
+        -:  186:			// We pick the next node and call ourselves again
+   524268:  187:			b->readNode = b->readNode->next;
+   524268:  188:			return buff_getc(b);
         -:  189:		}
-        -:  190:	}
-        -:  191:
-134218189:  192:	return b->readNode->mem[b->readNode->readAddr++];
-        -:  193:}
+        -:  190:		else {
+       20:  191:			return EOF;
+        -:  192:		}
+        -:  193:	}
         -:  194:
-       67:  195:s buff_unputc(Buffer* b){
-       67:  196:	CHECK_NULL(b, return EOF)
-       67:  197:	CHECK_NULL(b->writeNode, return EOF)
-        -:  198:
-        -:  199:	// If we're at the start of our node
-       67:  200:	CHECK_ZERO(b->writeNode->writeAddr, return EOF)
+134218189:  195:	return b->readNode->mem[b->readNode->readAddr++];
+        -:  196:}
+        -:  197:
+       67:  198:s buff_unputc(Buffer* b){
+       67:  199:	CHECK_NULL(b, return EOF)
+       67:  200:	CHECK_NULL(b->writeNode, return EOF)
         -:  201:
-        -:  202:	/*
-        -:  203:		// This is correct because of buff_putc's behaviour
-        -:  204:		// 
-        -:  205:		// Indeed, writeAddr will never be 0 unless we're at the absolute
-        -:  206:		// start of the buffer. It skips 0. It goes from 255 to 256, which
-        -:  207:		// is out of bounds, detects that 256 is out of bounds, changes node,
-        -:  208:		// then writes at 0 in the next and sets writeAddr to 1.
-        -:  209:		// So, a mere --writeAddr is always enough !
-        -:  210:
-        -:  211:		if (b->writeNode->prec){
-        -:  212:			b->writeNode = b->writeNode->prec;
-        -:  213:			return buff_unputc(b);
-        -:  214:		}
-        -:  215:	//*/
-        -:  216:
-       67:  217:	return b->writeNode->mem[--b->writeNode->writeAddr];
-        -:  218:}
+        -:  202:	// If we're at the start of our node
+       67:  203:	CHECK_ZERO(b->writeNode->writeAddr, return EOF)
+        -:  204:
+        -:  205:	/*
+        -:  206:		// This is correct because of buff_putc's behaviour
+        -:  207:		// 
+        -:  208:		// Indeed, writeAddr will never be 0 unless we're at the absolute
+        -:  209:		// start of the buffer. It skips 0. It goes from 255 to 256, which
+        -:  210:		// is out of bounds, detects that 256 is out of bounds, changes node,
+        -:  211:		// then writes at 0 in the next and sets writeAddr to 1.
+        -:  212:		// So, a mere --writeAddr is always enough !
+        -:  213:
+        -:  214:		if (b->writeNode->prec){
+        -:  215:			b->writeNode = b->writeNode->prec;
+        -:  216:			return buff_unputc(b);
+        -:  217:		}
+        -:  218:	//*/
         -:  219:
-       67:  220:void buff_reset(Buffer* b){
-       67:  221:	if (b != NULL){
-       67:  222:		b->readNode = b->start;
-       67:  223:		b->writeNode = b->start;
-        -:  224:
-        -:  225:		// Go through each node and reset it
-       67:  226:		node* cur = b->start;
-   196808:  227:		while (cur != NULL){
-   196674:  228:			cur->readAddr = 0;
-   196674:  229:			cur->writeAddr = 0;
-   196674:  230:			cur = cur->next;
-        -:  231:		}
-        -:  232:	}
-       67:  233:}
-        -:  234:
-       67:  235:sFile* my_open(int fd){	
-        -:  236:	sFile* f;
-       67:  237:	ALLOC_NULL((f = malloc(sizeof(struct s_file))),
-        -:  238:			"malloc of file", NULL, my_close(NULL))
-        -:  239:
-       67:  240:	ALLOC_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
-        -:  241:			"malloc in file", f, my_close(f))
-        -:  242:	//f->mode = mode[0];
-       67:  243:	f->length = 0;
-       67:  244:	f->index = 0;
-       67:  245:	f->fd = fd;
-        -:  246:
-       67:  247:	return f;
-        -:  248:}
+       67:  220:	return b->writeNode->mem[--b->writeNode->writeAddr];
+        -:  221:}
+        -:  222:
+       67:  223:void buff_reset(Buffer* b){
+       67:  224:	if (b != NULL){
+       67:  225:		b->readNode = b->start;
+       67:  226:		b->writeNode = b->start;
+        -:  227:
+        -:  228:		// Go through each node and reset it
+       67:  229:		node* cur = b->start;
+   196808:  230:		while (cur != NULL){
+   196674:  231:			cur->readAddr = 0;
+   196674:  232:			cur->writeAddr = 0;
+   196674:  233:			cur = cur->next;
+        -:  234:		}
+        -:  235:	}
+       67:  236:}
+        -:  237:
+       67:  238:sFile* my_open(int fd){	
+        -:  239:	sFile* f;
+       67:  240:	ALLOC_NULL((f = malloc(sizeof(struct s_file))),
+        -:  241:			"malloc of file", NULL, my_close(NULL))
+        -:  242:
+       67:  243:	ALLOC_NULL((f->buffer = malloc(BUFFER_SIZE * sizeof(char))),
+        -:  244:			"malloc in file", f, my_close(f))
+        -:  245:	//f->mode = mode[0];
+       67:  246:	f->length = 0;
+       67:  247:	f->index = 0;
+       67:  248:	f->fd = fd;
         -:  249:
-134218209:  250:char my_getc(sFile* f){
-134218209:  251:	if(f->length == 0 || f->index >= f->length){
-   524384:  252:		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
-   524384:  253:		f->index = 0;
-   524384:  254:		ASSERT(f->length, return EXIT_FAIL);
-   524384:  255:		CHECK_ZERO(f->length, return EOF);
-        -:  256:	}
-134218142:  257:	return f->buffer[f->index++];
-        -:  258:}
-        -:  259:
-       67:  260:int my_close(sFile* f){
-       67:  261:	CHECK_NULL(f, return EXIT_FAIL)
+       67:  250:	return f;
+        -:  251:}
+        -:  252:
+134218209:  253:char my_getc(sFile* f){
+134218209:  254:	if(f->length == 0 || f->index >= f->length){
+   524384:  255:		f->length = read(f->fd, f->buffer, BUFFER_SIZE);
+   524384:  256:		f->index = 0;
+   524384:  257:		ASSERT(f->length, return EXIT_FAIL);
+   524384:  258:		CHECK_ZERO(f->length, return EOF);
+        -:  259:	}
+134218142:  260:	return f->buffer[f->index++];
+        -:  261:}
         -:  262:
-       67:  263:	free(f->buffer);
-       67:  264:	free(f);
-       67:  265:	return 0;
-        -:  266:}
-        -:  267:
+       67:  263:int my_close(sFile* f){
+       67:  264:	CHECK_NULL(f, return EXIT_FAIL)
+        -:  265:
+       67:  266:	free(f->buffer);
+       67:  267:	free(f);
+       67:  268:	return 0;
+        -:  269:}
+        -:  270:

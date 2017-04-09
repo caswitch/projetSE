@@ -20,9 +20,12 @@ String to number conversion fail
 callProgram execvp
 + ./detecter -l1 -i1 -c toto /dev/null
 callProgram execvp
++ ulimit -n 4
++ ./detecter -l 1 -i 1 ls -l
+callProgram pipe: Too many open files
 + echo toto
-++ grep -c toto
 ++ ./detecter -i1 -l2 cat toto.tmp
+++ grep -c toto
 + toto=1
 + '[' 1 -gt 1 ']'
 + rm ./toto.tmp
