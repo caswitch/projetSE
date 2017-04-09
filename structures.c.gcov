@@ -1,4 +1,4 @@
-        -:    0:Source:src/buff_and_file.c
+        -:    0:Source:src/structures.c
         -:    0:Programs:2
         -:    1:#include <stdlib.h>
         -:    2:#include <stdio.h>
@@ -6,7 +6,7 @@
         -:    4:#include <stdbool.h>
         -:    5:#include <errno.h>
         -:    6:
-        -:    7:#include "buff_and_file.h"
+        -:    7:#include "structures.h"
         -:    8:
         -:    9:#define EXIT_FAIL -1
         -:   10:

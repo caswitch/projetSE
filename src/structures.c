@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "buff_and_file.h"
+#include "structures.h"
 
 #define EXIT_FAIL -1
 

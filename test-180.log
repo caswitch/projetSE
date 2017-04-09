@@ -29,8 +29,8 @@ callProgram pipe: Too many open files
 + toto=1
 + '[' 1 -gt 1 ']'
 + rm ./toto.tmp
-+ head -c 188 /dev/urandom
 + base64
++ head -c 188 /dev/urandom
 + ./detecter -l1 -i1 cat toto.tmp
 + rm ./toto.tmp
 + exit 0

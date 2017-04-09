@@ -10,7 +10,7 @@
         -:    8:#include <wait.h>
         -:    9:#include <errno.h>
         -:   10:
-        -:   11:#include "buff_and_file.h"
+        -:   11:#include "structures.h"
         -:   12:#include "detecter.h"
         -:   13:
         -:   14:#define BUFFT_SIZE 256

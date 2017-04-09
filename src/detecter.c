@@ -8,7 +8,7 @@
 #include <wait.h>
 #include <errno.h>
 
-#include "buff_and_file.h"
+#include "structures.h"
 #include "detecter.h"
 
 #define BUFFT_SIZE 256

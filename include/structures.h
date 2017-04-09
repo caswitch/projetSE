@@ -1,10 +1,10 @@
 /**
- * @file buff_and_file.h
+ * @file structures.h
  * @brief s_buff and sFile structure and related methods
  */
 
-#ifndef __BUFF_AND_FILE__H_
-#define __BUFF_AND_FILE__H_
+#ifndef __STRUCTURES__H_
+#define __STRUCTURES__H_
 
 #define BUFF_SIZE 256
 #define WRITE 1
