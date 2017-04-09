@@ -45,7 +45,7 @@ typedef struct s_buff{
  * @brief Frees the buffer
  * And each of its nodes
  * 
- * @param b
+ * @param b Buffer* pointer to a buffer structure
  */
 void buff_free(Buffer* b);
 
@@ -59,18 +59,18 @@ Buffer* buff_new();
  * @brief Appends c to the end of the buffer
  * @details The buffer will scale up if there is no room left for c
  * 
- * @param b 
- * @param c 
+ * @param b Buffer* pointer to a buffer structure 
+ * @param c Element (of type s) to place in the buffer
  * 
  * @return -1 if error, 0 otherwise
  */
-int buff_putc(Buffer* b, char c);
+int buff_putc(Buffer* b, s c);
 
 /**
  * @brief [Unused] Get the length of the text inside the buffer
  * @details Not the buffer's capacity
  * 
- * @param b 
+ * @param b Buffer* pointer to a buffer structure 
  * @return Length of the buffer's content
  */
 int buff_getSize(Buffer* b);
@@ -79,7 +79,7 @@ int buff_getSize(Buffer* b);
  * @brief Prints the contents of the buffer
  * @details Uses write
  * 
- * @param b 
+ * @param b Buffer* pointer to a buffer structure 
  * @return -1 if error
  */
 int buff_print(Buffer* b);
@@ -89,26 +89,26 @@ int buff_print(Buffer* b);
  * @details One at a time, from 0 to size-1. Returns -1 if you reached the end
  * of the buffer. Reset with buff_setpos(b, 0, 0)
  * 
- * @param b 
+ * @param b Buffer* pointer to a buffer structure 
  * @return A character
  */
-char buff_getc(Buffer* b);
+s buff_getc(Buffer* b);
 
 /**
  * @brief Removes the last character from a buffer
  * @details Does not down-size the buffer
  * 
- * @param b 
+ * @param b Buffer* pointer to a buffer structure 
  * @return The character removed
  */
-char buff_unputc(Buffer* b);
+s buff_unputc(Buffer* b);
 
 /**
  * @brief Sets the reading and writing positions to 0.
  * @details Does not 
  * Does not downsize the buffer. 
  * 
- * @param b 
+ * @param b Buffer* pointer to a buffer structure 
  * @return 0 if no errors
  */
 void buff_reset(Buffer* b);

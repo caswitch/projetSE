@@ -128,7 +128,7 @@ int buff_print(Buffer* b){
 	return EXIT_SUCCESS;
 }
 
-char buff_getc(Buffer* b){
+s buff_getc(Buffer* b){
 	PTR_NULL(b, EOF)
 	PTR_NULL(b->readNode, EOF)
 
@@ -148,7 +148,7 @@ char buff_getc(Buffer* b){
 	return b->readNode->mem[b->readNode->readAddr++];
 }
 
-char buff_unputc(Buffer* b){
+s buff_unputc(Buffer* b){
 	PTR_NULL(b, EOF)
 	PTR_NULL(b->writeNode, EOF)
 
