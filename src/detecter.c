@@ -12,6 +12,12 @@
 #include "assert.h"
 #include "detecter.h"
 
+#define BUFFT_SIZE 256
+#define CONVERT_USEC 1000
+#define NUMBER_OF_STRINGS 42
+#define STRING_LENGTH 2
+#define ZERO_TERMINATOR 1
+
 // Converts a string to an int and errors out if not possible
 int safe_atoi(char const* str){
 	// If a user enters "test", 
@@ -46,13 +52,15 @@ void usage(char * const command) {
 	exit(EXIT_FAILURE);
 }
 
-Buffer* output_delta(int fd, Buffer* cache){
+bool output_delta(int fd, Buffer* cache){
 	char new = '_';
 	char old = '_';
 	//unsigned int i;
 	bool retvalue = false;
 
 	sFile* f = my_open(fd);
+	if (f == NULL)
+		grumble("output_delta malloc");
 
 	buff_reset(cache);
 
@@ -65,16 +73,18 @@ Buffer* output_delta(int fd, Buffer* cache){
 			retvalue = true;
 		}
 		
-		assert(buff_putc(cache, new), "buff_putc");
+		if (buff_putc(cache, new) == -1){
+			//todo
+		}
 	}
 	buff_unputc(cache);
 	my_close(f);
 	
 	if (retvalue){
-		return cache;
+		return true;
 	}
 	else {
-		return NULL;
+		return false;
 	}
 }
 
@@ -153,9 +163,8 @@ void interval(char const *prog, char *const args[], int opt_i,
 			print_time(format);
 
 		fd = callProgram(prog, args);
-		output = output_delta(fd, output);
 
-		if (output != NULL)
+		if (output_delta(fd, output))
 			if (buff_print(output) == -1){
 				buff_free(output);
 				grumble("interval write to stdout fail");

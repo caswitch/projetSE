@@ -27,12 +27,6 @@
 #ifndef __DETECTER__H_
 #define __DETECTER__H_
 
-#define BUFFT_SIZE 256
-#define CONVERT_USEC 1000
-#define NUMBER_OF_STRINGS 42
-#define STRING_LENGTH 2
-#define ZERO_TERMINATOR 1
-
 
 /**
  * @brief String to number conversion but exits on error instead of returning 0
@@ -62,7 +56,7 @@ void usage(char * const command);
  * @return Either NULL if no differences were found, or a the address of a
  * buffer containing what was read from the file descriptor.
  */
-Buffer* output_delta(int fd, Buffer* cache);
+bool output_delta(int fd, Buffer* cache);
 
 /**
  * @brief Prints current time according to a format. See strftime.
