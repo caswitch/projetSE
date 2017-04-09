@@ -45,53 +45,43 @@ Cela nous permet d'avoir un code (nous l'espérons) lisible et de potentiellemen
 
 #### Appels, redirections
 
-Nous avons crée une fonction ```callProgram``` se chargeant d'appeler le programme passé en argument avec ses arguments et qui renvoie un tube vers lequel est redirigé la sortie standard du dit programme. Les autres fonctions de notre algorithme utiliseront donc ce tube pour détecter d'éventuels changements dans la sortie de ce programme par rapport à ses autres appels.
+Nous avons crée une fonction ```callProgram``` ([doc]()) se chargeant d'appeler le programme passé en argument avec ses arguments et qui renvoie un tube vers lequel est redirigé la sortie standard du dit programme. Les autres fonctions de notre algorithme utiliseront donc ce tube pour détecter d'éventuels changements dans la sortie de ce programme par rapport à ses autres appels.
+
+[Voir ```callProgram()```](doc/html/detecter_8h.html#a29aec1ddf28d146551c18cce81ed5399)
+
 
 #### Structures
 
-Pour le stockage et la comparaison, nous avons crée deux structures de données:
+Pour le stockage et la comparaison, nous avons crée trois structures de données:
 
-* Une structure "Fichier", initialisable à partir d'un file descriptor renvoyé par ```open``` et permettant l'utilisation d'un getchar bufferisé sur celui-ci.
-* Une structure "Buffer", permettant de stocker un nombre virtuellement illimité de caractères, à laquelle nous avons associé un certain nombre de fonctions, notamment un putchar et un getchar
+* [Une structure ```sFile```](doc/html/structs__file.html), initialisable à partir d'un file descriptor renvoyé par ```open``` et permettant l'utilisation d'un getchar bufferisé sur celui-ci.
+* [Une structure ```Buffer```](doc/html/structs__buff.html), une liste doublement chaînée de ```Nodes```. Les buffers nous permettent de stocker un nombre virtuellement illimité d'élements, que nous manipulons grâce un certain nombre de fonctions, notamment un putchar et un getchar
+* [Une structure ```Node```](doc/html/structs__node.html), un maillon de liste chaînée. Ce sont des tableaux de N=256 éléments de type unique, mais variable (nous utilisons des char). Ils connaissent localement l'adresse de leur successeur et de leur prédécesseur
+
+[Voir ```l'encapsulation```](doc/html/buff__and__file_8h.html)
 
 #### Lecture, comparaison et stockage du flux de données
 
-Nous avons décidé de cacher la complexité de la comparaison et du stockage des données en utilisant uniquement les getchar et des putchar dans lesquels le vrai travail en mémoire se fait.
+Nous avons décidé de cacher la complexité de la comparaison et du stockage des données en utilisant uniquement les fonctions getchar et putchar dans lesquelles le vrai travail en mémoire se fait.
 
 Ces getchars nous permettent de comparer l'ancienne sortie et la nouvelle au fur et à mesure que le programme fils s'exécute, à travers une boucle extrêmement lisible, comparant simplement caractère par caractère les deux flux et remplacant le contenu du buffer au fur et à mesure avec un appel à putchar.
 
-* Nous avons introduit *un* effet de bord (documenté) dans la fonction output_delta que vous risquerez de ne pas aimer. Nous utilisons le même buffer à chaque fois, ce qui permet de ne pas malmener le cache de nos processeurs et de faire moins souvent des allocations et des frees pour les programmes écrivant beaucoup. 
-* Nous avons choisi d'encapsuler entièrement nos structures de donnée afin de nous permettre de les changer sans impacter le reste du programme
-* Nous avons opté pour l'utilisation de reallocs pour redimensionner notre buffers mais avons envisagé une listes chaînée. 
-* 
+* Nous avons introduit *un* effet de bord (documenté) dans la fonction output_delta que vous risquerez de ne pas aimer. Nous utilisons le même buffer passé en argument pour stocker les nouvelles données, ce qui permet de moins malmener le cache de nos processeurs, de faire moins souvent des allocations et des frees pour les programmes écrivant beaucoup. 
+En effet, à tout instant, nous lisons et écrivons dans des zones mémoire très proches.
+* Nous avons choisi d'encapsuler entièrement nos structures de donnée afin de nous permettre de les changer sans impacter le programme principal, ce que nous avons d'ailleurs fait: au début nous utilisions un buffer de taille fixe et des reallocs.
+
+[Voir ```output_delta()```](doc/html/detecter_8h.html#a5351354317915a33d5a3c1c2611a5315)
 
 #### Couverture et jeux de tests
 
-Jeu de tests dans test-180.sh
-* [# tests élémentaires sur les options]
-  * ./detecter -h && fail "option help"
-    * 
-  * ./detecter -r && fail "option inconnue"
-    * 
-  * ./detecter -t && fail "l'option nécessite un argument"
-    * 
-  * ./detecter -i && fail "l'option nécessite un argument"
-    * 
-  * ./detecter -l && fail "l'option nécessite un argument"
-    * 
-  * ./detecter -i1 -l1 -c cat $DN || fail "syntaxe -i1 -l1 -c"
-    * 
-  * ./detecter -t "i" cat $DN && fail "invalid format for -t option"
-    * 
-  * ./detecter -t "format%c" -i 1 -l 1 cat $DN || fail "format for -t option"
-    * 
-  * ./detecter -l texte cat $DN && fail "argument de -l invalide"
-    * 
-  * ./detecter -i texte cat $DN && fail "argument de -i invalide"
-    * 
-  * ./detecter -l1 -i1 toto $DN && fail "cmd inconnue"
-    * 
-  * ./detecter -l1 -i1 -c toto $DN && fail "cmd inconnue"
-* [# test la détection d'un changement dans un fichier]
-  * vérifie si le programme détecte un changement dans un fichier qui ne change jamais
-  * (fonction output_delta mise à l'épreuve)
+Nous avons mis nos jeux de tests additionnels dans test-180.sh
+
+Nous testons plusieurs choses,
+
+- Quelques petites choses sur les arguments du programme
+  - Les options sont-elles valides ?
+  - Les arguments des options sont-ils valides ?
+  - getopt comprend-il les syntaxes qu'il devrait comprendre ?
+- Si il détecte bien quand l'utilisateur a rentré une commande qui n'existe pas
+- Si aucun changement n'est détecté entre deux appels d'un programme qui affiche toujours la même chose
+- Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.
