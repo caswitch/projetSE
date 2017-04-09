@@ -1,0 +1,82 @@
+<h1 id="table-des-matières">Table des matières</h1>
+<h2 id="sujet">Sujet</h2>
+<p>L'objectif de ce projet était de créer une commande <code>detecter</code> permettant de lancer périodiquement un programme et de détecter les changements dans sa sortie standard en respectant scrupuleusement une spécification.</p>
+<pre><code>detecter [-t format][-i intervalle][-l limite][-c] prog arg1 arg2 ... argn</code></pre>
+<h2 id="difficultés">Difficultés</h2>
+<p>Le projet a amené son lot de difficultés auxquelles nous nous attendions,</p>
+<ul>
+<li>Comme c'est souvent le cas pour les travaux de groupe, nous avons du faire preuve de coordination, discuter ensemble de l'architecture que nous choisirions pour notre code, nous séparer les tâches et enfin, coordonner nos prières envers les dieux de git tous les soirs</li>
+<li>Il a fallu s'y reprendre à plusieurs fois pour coder la boucle principale afin de respecter le sujet et la spécification autant que possible</li>
+</ul>
+<p>Et quelques unes plus spécifiques</p>
+<ul>
+<li>Comment comparer les sorties entre les différents appels du programme passé en argument ?</li>
+<li>Comment allons-nous nous débrouiller pour stocker en mémoire ces sorties dont nous ne connaissons pas la taille finale avant d'avoir reçu leur EOF ?</li>
+<li>Apprendre et utiliser les informations liées à la couverture de code.</li>
+<li>Passer et créer des jeux de tests pour le programme.</li>
+</ul>
+<p>Pour répondre à ces problèmes, nous avons fait quelques choix.</p>
+<h2 id="spécificités-de-notre-implémentation">Spécificités de notre implémentation</h2>
+<h4 id="documentation">Documentation</h4>
+<p>Notre projet est entièrement commenté avec une syntaxe compatible avec doxygen. Il est donc possible de générer cette documentation avec la commande <code>doxygen</code> à exécuter dans la racine du projet.</p>
+<p>Nous avons pris soin d'écrire un maximum de choses en anglais avec l'éditeur de texte <a href="https://xkcd.com/simplewriter/">SimpleWriter</a> qui nous limite aux 10.000 mots les plus communs de la langue anglaise.</p>
+<h4 id="méthode">Méthode</h4>
+<p>Notre méthode de travail a été de diviser le problème en un maximum de sous-problèmes et de laisser chaque partie du programme s'occuper de son propre morceau de complexité.</p>
+<p>Cela nous permet d'avoir un code (nous l'espérons) lisible et de potentiellement pouvoir réimplémenter certains morceaux de notre programme dans de futurs projet faisant face aux mêmes types de difficultés.</p>
+<h4 id="appels-redirections">Appels, redirections</h4>
+<p>Nous avons crée une fonction <code>callProgram</code> (<a href="">doc</a>) se chargeant d'appeler le programme passé en argument avec ses arguments et qui renvoie un tube vers lequel est redirigé la sortie standard du dit programme. Les autres fonctions de notre algorithme utiliseront donc ce tube pour détecter d'éventuels changements dans la sortie de ce programme par rapport à ses autres appels.</p>
+<p><a href="doc/html/detecter_8h.html#a29aec1ddf28d146551c18cce81ed5399">Voir <code>callProgram()</code></a></p>
+<h4 id="structures">Structures</h4>
+<p>Pour le stockage et la comparaison, nous avons crée trois structures de données:</p>
+<ul>
+<li><a href="doc/html/structs__file.html">Une structure <code>sFile</code></a>, initialisable à partir d'un file descriptor renvoyé par <code>open</code> et permettant l'utilisation d'un getchar bufferisé sur celui-ci.</li>
+<li><a href="doc/html/structs__buff.html">Une structure <code>Buffer</code></a>, une liste doublement chaînée de <code>Nodes</code>. Les buffers nous permettent de stocker un nombre virtuellement illimité d'élements, que nous manipulons grâce un certain nombre de fonctions, notamment un putchar et un getchar</li>
+<li><a href="doc/html/structs__node.html">Une structure <code>Node</code></a>, un maillon de liste chaînée. Ce sont des tableaux de N=256 éléments de type unique, mais variable (nous utilisons des char). Ils connaissent localement l'adresse de leur successeur et de leur prédécesseur</li>
+</ul>
+<p><a href="doc/html/buff__and__file_8h.html">Voir <code>l'encapsulation</code></a></p>
+<h4 id="lecture-comparaison-et-stockage-du-flux-de-données">Lecture, comparaison et stockage du flux de données</h4>
+<p>Nous avons décidé de cacher la complexité de la comparaison et du stockage des données en utilisant uniquement les fonctions getchar et putchar dans lesquelles le vrai travail en mémoire se fait.</p>
+<p>Ces getchars nous permettent de comparer l'ancienne sortie et la nouvelle au fur et à mesure que le programme fils s'exécute, à travers une boucle extrêmement lisible, comparant simplement caractère par caractère les deux flux et remplacant le contenu du buffer au fur et à mesure avec un appel à putchar.</p>
+<ul>
+<li>Nous avons introduit <em>un</em> effet de bord (documenté) dans la fonction output_delta que vous risquerez de ne pas aimer. Nous utilisons le même buffer passé en argument pour stocker les nouvelles données, ce qui permet de moins malmener le cache de nos processeurs, de faire moins souvent des allocations et des frees pour les programmes écrivant beaucoup. En effet, à tout instant, nous lisons et écrivons dans des zones mémoire très proches.</li>
+<li>Nous avons choisi d'encapsuler entièrement nos structures de donnée afin de nous permettre de les changer sans impacter le programme principal, ce que nous avons d'ailleurs fait: au début nous utilisions un buffer de taille fixe et des reallocs.</li>
+</ul>
+<p><a href="doc/html/detecter_8h.html#a5351354317915a33d5a3c1c2611a5315">Voir <code>output_delta()</code></a></p>
+<h4 id="couverture-et-jeux-de-tests">Couverture et jeux de tests</h4>
+<p>Nous avons mis nos jeux de tests additionnels dans test-180.sh</p>
+<p>Nous testons plusieurs choses,</p>
+<ul>
+<li>Quelques petites choses sur les arguments du programme</li>
+<li>L'ordre des options a-t-il une importance ? (Non)</li>
+<li>La présence ou non de toutes les options a-t-elle une importance ? (NON)
+<ul>
+<li>Dans certains cas précis, par exemple, <code>./detecter -l1 -i1 toto $DN</code> renvoyait EXIT_SUCCESS alors que `` `./detecter -l1 -i1 -c toto $DN``` renvoyait EXIT_FAILURE. Ceci s'expliquait car le processus fils ne signalait pas au père que la commande donnée en argument de execvp était invalide à moins d'avoir l'option -c spécifier. Créer des jeux de tests nous a donc permis de voir des faiblesses d'implémentation et de les corriger.</li>
+</ul></li>
+<li>Les options sont-elles valides ?</li>
+<li>Les arguments des options sont-ils valides ?</li>
+<li>getopt comprend-il les syntaxes qu'il devrait comprendre ?</li>
+<li>Si il détecte bien quand l'utilisateur a rentré une commande qui n'existe pas</li>
+<li>Si aucun changement n'est détecté entre deux appels d'un programme qui affiche toujours la même chose</li>
+<li>Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.</li>
+</ul>
+<p>Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO. * GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme. * ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE * ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro) * CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO) * CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)</p>
+<p>Nous avons intentionnellement gardé plusieurs MACRO qui ont un comportement similaire dans un soucis de lisibilité du code.</p>
+<h2 id="architecture-du-programme">Architecture du programme</h2>
+<p>Notre programme commence dans sa fonction main dans laquelle il:</p>
+<ul>
+<li>Initialise ses options (symbolisées par des variables opt_X) à leurs valeurs par défaut</li>
+<li>Analyse les arguments entrés par l'utilisateur et modifie ses options en conséquence</li>
+<li>Potentiellement appelle la fonction usage() si les arguments sont mauvais</li>
+<li>Appelle le coeur du programme, la fonction <code>interval()</code></li>
+</ul>
+<p><a href="">Voir <code>Main</code></a></p>
+<p>L'allocation du <a href="doc/html/structs__buff.html"><code>buffer</code></a> qui durera pendant l'intégralité du programme se fait ici</p>
+<p>Cette fonction appelle N fois le programme X avec les arguments Y toutes les K millisecondes.</p>
+<p><a href="doc/html/detecter_8h.html#aa4efd77ab6ae544b8985d542daa63a2f">Voir <code>interval()</code></a></p>
+<p>L'exécution du programme se fait via la fonction callProgram se chargeant d'appeler le programme passé en argument avec ses arguments et qui renvoie un tube vers lequel est redirigé la sortie standard du dit programme.</p>
+<p><a href="doc/html/detecter_8h.html#a29aec1ddf28d146551c18cce81ed5399">Voir <code>callProgram()</code></a></p>
+<p>Ce file descriptor est ensuite passé à la fonction output_delta(), ainsi que le buffer, qui saura nous dire si les données sorties par le programme diffèrent de celles présentes dans le buffer.</p>
+<p>Si c'est le cas, la fonction buff_print() se charge d'afficher les données.</p>
+<p><a href="doc/html/buff__and__file_8h.html#a8a6915be4ebc290760baff3bc2378b00"><code>Voir buff_print()</code></a></p>
+<p>Dans tous les cas, nous attendons ensuite l'extinction du programme fils invoqué par callProgram() avec la fonction exit_code().</p>
+<p><a href="doc/html/detecter_8c.html#aa07b951f949b7b01251f236dd4d62405"><code>Voir exit_code()</code></a></p>

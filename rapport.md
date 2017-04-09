@@ -75,6 +75,9 @@ Nous avons mis nos jeux de tests additionnels dans test-180.sh
 Nous testons plusieurs choses,
 
 - Quelques petites choses sur les arguments du programme
+  - L'ordre des options a-t-il une importance ? (Non)
+  - La présence ou non de toutes les options a-t-elle une importance ? (NON)
+    - Dans certains cas précis, par exemple, ```./detecter -l1 -i1 toto $DN ``` renvoyait EXIT_SUCCESS alors que `` `./detecter -l1 -i1 -c toto $DN``` renvoyait EXIT_FAILURE. Ceci s'expliquait car le processus fils ne signalait pas au père que la commande donnée en argument de execvp était invalide à moins d'avoir l'option -c spécifier. Créer des jeux de tests nous a donc permis de voir des faiblesses d'implémentation et de les corriger.
   - Les options sont-elles valides ?
   - Les arguments des options sont-ils valides ?
   - getopt comprend-il les syntaxes qu'il devrait comprendre ?
@@ -82,6 +85,14 @@ Nous testons plusieurs choses,
 - Si aucun changement n'est détecté entre deux appels d'un programme qui affiche toujours la même chose
 - Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.
 
+Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO.
+* GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme.
+   * ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE
+   * ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro)
+   * CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO)
+   * CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)
+ 
+Nous avons intentionnellement gardé plusieurs MACRO qui ont un comportement similaire dans un soucis de lisibilité du code.
 
 ## Architecture du programme
 
