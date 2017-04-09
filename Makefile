@@ -71,16 +71,13 @@ gcov:
 .PHONY: test
 test: test-sans-valgrind
 
-.PHONY: test_sans-valgrind
+.PHONY: test-sans-valgrind
 test-sans-valgrind: all
 	@for i in test/test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
 
 .PHONY: test-avec-valgrind
 test-avec-valgrind: all
-	VALGRIND="valgrind -q"
-	export VALGRIND
-	for i in test/test-*.sh
-	do echo $$i ; sh $$i || exit 1 ; done
+	VALGRIND="valgrind" ; export VALGRIND ; for i in test/test-*.sh ; do echo $$i ; sh $$i || exit 1 ; done
 
 .PHONY: couverture-et-tests
 couverture-et-tests: clean coverage test gcov
