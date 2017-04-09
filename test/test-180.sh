@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#
-# Quelques tests pour vérifier les options/paramètres
-#
-
 TEST=$(basename $0 .sh)
 
 TMP=/tmp/$TEST
@@ -23,19 +19,36 @@ fail ()
 
 DN=/dev/null
 
-# tests élémentaires sur les options
+# tests élémentaires supplémentaires sur les options
 
-./detecter -i texte -l 1      ls -l				&& fail "-i texte"
-./detecter -i 1     -l texte  ls -l				&& fail "-l texte"
-./detecter -i texte -l texte  ls -l				&& fail "-i texte -l texte"
-./detecter -i 1     -l 1 	  programmeInconnu 	|| fail "Programme inconnu"
-./detecter -i 1 	-l -c     ls -l  			&& fail "-l -c; manque un arg"
+./detecter -h && fail "option help"
 
-# vérifie si le programme détecte un changement dans un fichier 
-# qui ne change jamais
+./detecter -r && fail "option inconnue"
+
+./detecter -t && fail "l'option nécessite un argument"
+
+./detecter -i && fail "l'option nécessite un argument"
+
+./detecter -l && fail "l'option nécessite un argument"
+
+./detecter -i1 -l1 -c cat $DN || fail "syntaxe -i1 -l1 -c"
+
+./detecter -t "i" cat $DN && fail "invalid format for -t option"
+
+./detecter -t "format%c" -i 1 -l 1 cat $DN || fail "format for -t option"
+
+./detecter -l texte cat $DN && fail "argument de -l invalide"
+
+./detecter -i texte cat $DN && fail "argument de -i invalide"
+
+./detecter -l1 -i1 toto $DN && fail "cmd inconnue"
+
+./detecter -l1 -i1 -c toto $DN && fail "cmd inconnue"
+
+# test la détection d'un changement dans un fichier
 
 echo 'toto' > ./toto.tmp
-toto=$(./detecter -i 1     -l 2      'cat' 'toto.tmp' | grep -c 'toto')
+toto=$(./detecter -i1 -l2 'cat' 'toto.tmp' | grep -c 'toto')
 if [ $toto -gt 1 ]
 then
 	fail "la comparaison ne marche pas"

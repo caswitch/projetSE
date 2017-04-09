@@ -26,7 +26,15 @@ void buff_free(Buffer* b){
 
 node* node_new(){
 	node* n = malloc(sizeof(struct s_node));
+
+	if (n == NULL)
+		grumble ("malloc node");
+
 	n->mem = malloc(sizeof(s) * BUFF_SIZE);
+
+	if (n == NULL)
+		grumble ("malloc array in node");
+
 	n->size = BUFF_SIZE;
 	n->prec = NULL;
 	n->next = NULL;
@@ -70,12 +78,13 @@ int buff_putc(Buffer* b, char c){
 	return 0;
 }
 
+/*
 int buff_getSize(Buffer* b){
 	if (b == NULL)
 		return 0;
 	return b->length;
 }
-
+*/
 
 int buff_print(Buffer* b){
 	if (b == NULL)

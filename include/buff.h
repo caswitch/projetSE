@@ -5,6 +5,7 @@
 
 #ifndef __BUFF__H_
 #define __BUFF__H_
+
 #define BUFF_SIZE 256
 #define WRITE 1
 //#define READ 0

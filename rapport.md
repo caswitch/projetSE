@@ -22,6 +22,8 @@ Et quelques unes plus spécifiques
 
 * Comment comparer les sorties entre les différents appels du programme passé en argument ? 
 * Comment allons-nous nous débrouiller pour stocker en mémoire ces sorties dont nous ne connaissons pas la taille finale avant d'avoir reçu leur EOF ?
+* Apprendre et utiliser les informations liées à la couverture de code.
+* Passer et créer des jeux de tests pour le programme.
 
 Pour répondre à ces problèmes, nous avons fait quelques choix. 
 
@@ -62,3 +64,34 @@ Ces getchars nous permettent de comparer l'ancienne sortie et la nouvelle au fur
 * Nous avons choisi d'encapsuler entièrement nos structures de donnée afin de nous permettre de les changer sans impacter le reste du programme
 * Nous avons opté pour l'utilisation de reallocs pour redimensionner notre buffers mais avons envisagé une listes chaînée. 
 * 
+
+#### Couverture et jeux de tests
+
+Jeu de tests dans test-180.sh
+* [# tests élémentaires sur les options]
+  * ./detecter -h && fail "option help"
+    * 
+  * ./detecter -r && fail "option inconnue"
+    * 
+  * ./detecter -t && fail "l'option nécessite un argument"
+    * 
+  * ./detecter -i && fail "l'option nécessite un argument"
+    * 
+  * ./detecter -l && fail "l'option nécessite un argument"
+    * 
+  * ./detecter -i1 -l1 -c cat $DN || fail "syntaxe -i1 -l1 -c"
+    * 
+  * ./detecter -t "i" cat $DN && fail "invalid format for -t option"
+    * 
+  * ./detecter -t "format%c" -i 1 -l 1 cat $DN || fail "format for -t option"
+    * 
+  * ./detecter -l texte cat $DN && fail "argument de -l invalide"
+    * 
+  * ./detecter -i texte cat $DN && fail "argument de -i invalide"
+    * 
+  * ./detecter -l1 -i1 toto $DN && fail "cmd inconnue"
+    * 
+  * ./detecter -l1 -i1 -c toto $DN && fail "cmd inconnue"
+* [# test la détection d'un changement dans un fichier]
+  * vérifie si le programme détecte un changement dans un fichier qui ne change jamais
+  * (fonction output_delta mise à l'épreuve)

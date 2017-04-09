@@ -96,24 +96,20 @@ void print_time(char *format){
 }
 
 int callProgram(char const *prog, char *const args[]){
-	//int status;
-	//int devNull;
 	int tube[2];
 	
 	assert(pipe(tube), "callProgram pipe");
 	
-	int pid = fork();
-	switch(pid){
+	switch(fork()){
 		case 0:
 			//Case enfant
 			assert(close(tube[0]), "callProgram child close tube[0]");
-			assert(tube[1], "callProgram child write tube[1]");
 
 			assert(dup2(tube[1], 1), 
 				"callProgram child redirect stdout > tube[1]");
 
 			execvp(prog, args);
-			grumble("callProgram execlp");
+			assert(kill(getpid(), SIGUSR1), "kill failure child");
 		case -1:
 			//Case erreur
 			grumble("callProgram fork");
@@ -125,22 +121,21 @@ int callProgram(char const *prog, char *const args[]){
 	}
 }
 
-void exit_code(int i){
-	static int wstatus_old;
+void exit_code(int i, bool opt_c){
 	int wstatus;
+	static int status = 0;
+	
+	assert(wait(&wstatus), "wait");
 
-	if (i == 0) {
-		assert(wait(&wstatus_old), "wait");
-		wstatus_old = WEXITSTATUS(wstatus_old);
-		printf("exit %d\n", wstatus_old);
-	}
-	else {
-		assert(wait(&wstatus), "wait");
-		if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != wstatus_old){
-			wstatus_old = WEXITSTATUS(wstatus);
-			printf("exit %d\n", wstatus_old);
+	if (!WIFEXITED(wstatus))
+		grumble("callProgram execvp");
+
+	if (opt_c)
+		if (i == 0 || status != WEXITSTATUS(wstatus)) {
+			status = WEXITSTATUS(wstatus);
+			printf("exit %d\n", status);
 		}
-	}
+
 	fflush (stdout);
 }
 
@@ -166,8 +161,7 @@ void interval(char const *prog, char *const args[], int opt_i,
 				grumble("interval write to stdout fail");
 			}
 
-		if (opt_c)
-			exit_code(i);
+		exit_code(i, opt_c);
 
 		assert(close(fd), "close fd");
 		
@@ -175,6 +169,24 @@ void interval(char const *prog, char *const args[], int opt_i,
 		assert(usleep(opt_i* CONVERT_USEC), "usleep");
 	}
 	buff_free(output);
+}
+
+void check_format (const char * optarg, char * const command) {
+	char format_spec [NUMBER_OF_STRINGS][STRING_LENGTH + ZERO_TERMINATOR] = {
+		"%a","%A","%b","%B","%c","%C","%d","%D","%e","%E","%F","%G","%g",
+		"%h","%H","%I","%j","%k","%l","%m","%M","%n","%O","%p","%P","%r",
+		"%R","%s","%S","%t","%T","%u","%U","%V","%w","%W","%x","%X","%y",
+		"%Y","%Z","%+"};
+
+	for (int i = 0; i < 42; i++) {
+		if (strstr(optarg, format_spec[i]) != NULL)
+			return;
+	}
+	
+	printf ("Invalid format for -t option\n\n");
+	usage(command);
+
+	exit (EXIT_FAILURE);
 }
 
 int main(int argc, char* const argv[]){
@@ -186,17 +198,19 @@ int main(int argc, char* const argv[]){
 	bool opt_c = false;
 	char* format = NULL;
 	char* prog_name = argv[0];
+//	char format_spec [43][2 + 1];
 
 	while ((option = getopt(argc, argv, "+:t:i:l:ch")) != -1){
 		switch(option){
 			case 't':
+				check_format(optarg, prog_name);
 				opt_t = true;
 				format = optarg;
 				break;
 			case 'i':
 				opt_i = safe_atoi(optarg);
 				if (opt_i <= 0)
-					grumble("Intervalle nul");
+					grumble("Interval nul");
 				break;
 			case 'l':
 				opt_l = safe_atoi(optarg);
@@ -208,7 +222,7 @@ int main(int argc, char* const argv[]){
 				usage(prog_name);
 				break;
 			case '?':
-				fprintf(stderr, "Unknown option: %c\n", optopt);
+				fprintf(stderr, "Unknown option: %c\n\n", optopt);
 				usage(prog_name);
 				break;
 			case ':':
@@ -221,13 +235,8 @@ int main(int argc, char* const argv[]){
 		}
 	}
 
-
 	argc -= optind;
 	argv += optind;
-
-#ifdef DEBUG
-		printf("rest = %d\n", rest); //CHOU
-#endif
 
 	if (argc == 0)
 		usage(prog_name);

@@ -12,7 +12,7 @@ void grumble(char* msg){
 	else
 		fprintf(stderr, "%s\n", msg);
 
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 // Checks for error. If there's one, grumble and exit 

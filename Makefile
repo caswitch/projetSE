@@ -24,17 +24,19 @@
 DIROBJ  = obj
 DIRINC  = include
 DIRSRC  = src
+DIRTEST = test
 
 # Compiler
 
 CC      = gcc
 COV     = -coverage
-CFLAGS  = -Wall -Wextra -Werror -g $(COVERAGE) $(DEBUG)
+CFLAGS  = -Wall -Wextra -Werror -std=gnu99 -g $(COVERAGE) $(DEBUG)
 
 # Dépendances, sources, objets, exécutable
 
 DEPS    = $(wildcard include/*.h)
 SOURCES = $(wildcard src/*.c)
+TESTS   = $(wildcard test/*.c)
 OBJETS  = $(SOURCES:src/%.c=obj/%.o)
 EXEC    = detecter
 
@@ -50,13 +52,17 @@ $(DIROBJ)/%.o: $(DIRSRC)/%.c $(DEPS)
 
 # Cibles à appeler manuellement
 
+.PHONY: exec_test
+exec_test: $(EXEC)
+	./$(EXEC) -c -i 1000 -l 4 -t "%H:%M:%S" echo "test d'exécution"
+
 .PHONY: coverage
 coverage: clean
 	$(MAKE) COVERAGE=$(COV)
 
 .PHONY: gcov
 gcov:
-	gcov *.c
+	gcov $(SOURCES) -o $(DIROBJ)
 
 # Par défaut, "test" lance les tests sans valgrind.
 # Si on souhaite utiliser valgrind (conseillé), positionner la

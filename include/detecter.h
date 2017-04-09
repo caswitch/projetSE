@@ -29,6 +29,9 @@
 
 #define BUFFT_SIZE 256
 #define CONVERT_USEC 1000
+#define NUMBER_OF_STRINGS 42
+#define STRING_LENGTH 2
+#define ZERO_TERMINATOR 1
 
 
 /**
@@ -71,7 +74,12 @@ void print_time(char *format);
 
 /**
  * @brief Executes the program *prog with the arguments in args[]
- * @details 
+ * @details Exécute la commande à lancer par le programme.
+ * Si la commande est invalide, pour distinguer une erreur de excvp
+ * d'une erreur du programme qui lui est donné en argument 
+ * (commande invalide), le processsus fils envoie un signal au père.
+ * Ainsi, si le processus fils ne s'est pas terminé avec un exit,  
+ * c'est que la commande dans excvp est invalide.
  * 
  * @param prog Path to the executable
  * @param args char *const argv[] table. args[0] should be the executable's name
@@ -84,12 +92,23 @@ int callProgram(char const *prog, char *const args[]);
 /**
  * @brief Prints exit status in "i" if it detects changes in it from the last 
  * call.
- * @details Remembers the last wstatus it has received in the last call and
- * compares it with the new one. If the exit status is different, it prints it.
- * 
+ * @details Lors du premier lancement de la commande,
+ * si le retour est un exit, le code de retour est affiché,
+ * sinon, le processus fils qui exécute le programme 
+ * envoie un signal au père pour faire la différence entre
+ * une erreur produite lors de l'exécution d'execvp 
+ * (indépendamment de ses argumnents) et
+ * une erreur du programme donné en argument à execvp 
+ * (commande invalide).
+ * S'il y a, les lancements de la commande suivants détectent
+ * les changements de code de retour.
+ * Le premier lancement n'ayant pas quitté le programme, 
+ * les arguments de excvp sont valides.
+ *
  * @param i A wstatus as given by wait()
+ * @param opt_c Sensitive to changes in the exit code
  */
-void exit_code(int i);
+void exit_code(int i, bool opt_c);
 
 /**
  * @brief Executes a program periodically
@@ -105,5 +124,15 @@ void exit_code(int i);
  */
 void interval(char const *prog, char *const args[], int opt_i, 
 			  int opt_l, bool opt_c, bool opt_t, char* format);
+
+/**
+ * @brief Check if the format to -t option can formating date and time
+ * 
+ * @details Doesn't indicate if strftime fail
+ * 
+ * @param optarg Argument to -t option
+ * @param command The executable's file name
+ */
+void check_format (const char * optarg, char * const command);
 
 #endif
