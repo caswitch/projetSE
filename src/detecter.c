@@ -7,8 +7,7 @@
 #include <time.h>
 #include <wait.h>
 
-#include "file.h"
-#include "buff.h"
+#include "buff_and_file.h"
 #include "assert.h"
 #include "detecter.h"
 
