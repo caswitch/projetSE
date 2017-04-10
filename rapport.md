@@ -89,11 +89,12 @@ Nous testons plusieurs choses,
 - Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.
 
 Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO.
+
 * GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme.
-   * ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE
-   * ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro)
-   * CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO)
-   * CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)
+* ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE
+* ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro)
+* CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO)
+* CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)
  
 Nous avons intentionnellement gardé plusieurs MACRO qui ont un comportement similaire dans un soucis de lisibilité du code.
 

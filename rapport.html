@@ -1,4 +1,5 @@
 <h1 id="table-des-matières">Table des matières</h1>
+<p>Nicolat Argyriou Marie-France Kommer</p>
 <h2 id="sujet">Sujet</h2>
 <p>L'objectif de ce projet était de créer une commande <code>detecter</code> permettant de lancer périodiquement un programme et de détecter les changements dans sa sortie standard en respectant scrupuleusement une spécification.</p>
 <pre><code>detecter [-t format][-i intervalle][-l limite][-c] prog arg1 arg2 ... argn</code></pre>
@@ -10,10 +11,11 @@
 </ul>
 <p>Et quelques unes plus spécifiques</p>
 <ul>
+<li>Comment diviser le problème en sous-problème et les articuler ensemble pour avoir un programme fonctionnel ?</li>
 <li>Comment comparer les sorties entre les différents appels du programme passé en argument ?</li>
 <li>Comment allons-nous nous débrouiller pour stocker en mémoire ces sorties dont nous ne connaissons pas la taille finale avant d'avoir reçu leur EOF ?</li>
-<li>Apprendre et utiliser les informations liées à la couverture de code.</li>
-<li>Passer et créer des jeux de tests pour le programme.</li>
+<li>Comment utiliser les informations liées à la couverture de code et comment augmenter cette couverture ?</li>
+<li>Comment trouver un jeu de tests pertinent pour couvrir le code et tester son bon fonctionnement ?</li>
 </ul>
 <p>Pour répondre à ces problèmes, nous avons fait quelques choix.</p>
 <h2 id="spécificités-de-notre-implémentation">Spécificités de notre implémentation</h2>
@@ -59,7 +61,14 @@
 <li>Si aucun changement n'est détecté entre deux appels d'un programme qui affiche toujours la même chose</li>
 <li>Si le programme se comporte normalement lorsque les données qu'on lui fournit font 256 caractères de long, juste assez pour dépasser d'un cran la taille d'un maillon de sa liste chaînée.</li>
 </ul>
-<p>Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO. * GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme. * ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE * ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro) * CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO) * CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)</p>
+<p>Pour augmenter la couverture (de façon artificielle) du code, nous avons mis nos fonctions de tests dans des MACRO.</p>
+<ul>
+<li>GRUMBLE(msg) : Retourne un message d'erreur et quitte le programme.</li>
+<li>ALLOC_NULL(alloc, msg, ptr, OPERATION) : Test le bon fonctionnement d'un malloc, sinon libère la mémoire qui doit l'être et appelle GRUMBLE</li>
+<li>ASSERT(val, OPERATION) : Test si la valeur est égal à -1 et appelle OPERATION (une instruction, un fonction ou une macro)</li>
+<li>CHECK_NULL(ptr, OPERATION) : Test si le pointeur est NULL. Si oui, appelle OPERATION (une instruction, un fonction ou une MACRO)</li>
+<li>CHECK_ZERO(val, OPERATION) : Test si la valeur est égal à 0 et appelle OPERATION (une instruction, un fonction ou une MACRO)</li>
+</ul>
 <p>Nous avons intentionnellement gardé plusieurs MACRO qui ont un comportement similaire dans un soucis de lisibilité du code.</p>
 <h2 id="architecture-du-programme">Architecture du programme</h2>
 <p>Notre programme commence dans sa fonction main dans laquelle il:</p>
